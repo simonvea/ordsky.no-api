@@ -1,0 +1,9 @@
+{
+  "requestContext": {
+    "connectionId": 1
+  },
+  "body": {
+    "id": 1,
+    "words": ["one", "two", "three"]
+  }
+}
