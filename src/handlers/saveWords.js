@@ -1,5 +1,7 @@
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+'use strict';
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE;
 
@@ -23,6 +25,7 @@ exports.handler = async (event) => {
   }
 
   if (!id || !words) {
+    console.info('The request was missing id or words');
     return {
       statusCode: 400,
       body: JSON.stringify({
@@ -34,37 +37,40 @@ exports.handler = async (event) => {
   const params = {
     TableName: tableName,
     Key: {
-      id,
+      id: id.toString(),
     },
     ReturnValues: 'UPDATED_NEW',
-    AttributeUpdates: {
-      words: {
-        Actions: 'ADD',
-        Value: words,
-      },
-      numberOfEntries: {
-        Actions: 'ADD',
-        Value: 1,
-      },
-      connectionIds: {
-        Actions: 'ADD',
-        Value: [connectionId], // Having it as an array ensures that it is treated as a set?
-      },
+    UpdateExpression:
+      'SET #words = list_append(#words, :vals), #ne = #ne + :ne ADD connectionIds :id',
+    ExpressionAttributeNames: {
+      '#words': 'words',
+      '#ne': 'numberOfEntries',
+    },
+    ExpressionAttributeValues: {
+      ':vals': words,
+      ':ne': 1,
+      ':id': docClient.createSet([connectionId]),
     },
   };
 
-  const result = await docClient.update(params).promise();
+  try {
+    const result = await docClient.update(params).promise();
+    console.info('Updated db, response:', result);
 
-  const { numberOfEntries } = result.Attributes;
-
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify({ numberOfEntries }),
-  };
-
-  // All log statements are written to CloudWatch
-  console.info(
-    `response from: ${action} statusCode: ${response.statusCode} body: ${response.body}`
-  );
-  return response;
+    const { numberOfEntries } = result.Attributes;
+    const response = {
+      statusCode: 201,
+      body: JSON.stringify({ numberOfEntries }),
+    };
+    console.info(`response from: ${action} responded: ${response}`);
+    return response;
+  } catch (e) {
+    console.error('Failed to save to db. Error:', e);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Failed to save words.',
+      }),
+    };
+  }
 };
