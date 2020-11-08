@@ -192,8 +192,8 @@ Resources:
   # DynamoDB table to store words and clouds
   OrdskySessionTable:
     Type: AWS::DynamoDB::Table
-    TableName: OrdskySession
     Properties:
+      TableName: OrdskySession
       AttrubuteDefinition:
         - AttributeName: id
           AttributeType: String
