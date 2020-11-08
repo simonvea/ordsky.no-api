@@ -6,6 +6,7 @@ const tableName = process.env.SESSION_TABLE;
 
 exports.handler = async (event) => {
   const { action, id } = JSON.parse(event.body);
+  const { connectionId } = event.requestContext;
   if (action !== 'startsession') {
     return {
       statusCode: 500,
@@ -27,6 +28,7 @@ exports.handler = async (event) => {
     TableName: tableName,
     Item: JSON.stringify({
       id,
+      connectionIds: [connectionId],
     }),
   };
 

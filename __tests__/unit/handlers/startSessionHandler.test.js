@@ -18,6 +18,9 @@ describe('StartSession handler', () => {
     // Arrange
 
     const event = {
+      requestContext: {
+        connectionId: 1,
+      },
       body: JSON.stringify({
         action: 'startsession',
         id: '2',
@@ -38,6 +41,9 @@ describe('StartSession handler', () => {
   it('responds with statusCode 400 if missing id', async () => {
     // Arrange
     const event = {
+      requestContext: {
+        connectionId: 1,
+      },
       body: JSON.stringify({
         action: 'startsession',
       }),
@@ -56,6 +62,9 @@ describe('StartSession handler', () => {
   it('responds with statusCode 500 if it is invoked on wrong action', async () => {
     // Arrange
     const event = {
+      requestContext: {
+        connectionId: 1,
+      },
       body: JSON.stringify({
         action: 'savewords',
       }),
@@ -71,11 +80,15 @@ describe('StartSession handler', () => {
     // Assert
     expect(response.statusCode).toEqual(expected.statusCode);
   });
-  it('when payload contains id, saves id to dynamodb table', async () => {
+  it('when payload contains id, saves id and connectionId to dynamodb table', async () => {
     // Arrange
     putSpy.mockClear();
     const id = '12345';
+    const connectionId = 1;
     const event = {
+      requestContext: {
+        connectionId,
+      },
       body: JSON.stringify({
         action: 'startsession',
         id,
@@ -88,6 +101,7 @@ describe('StartSession handler', () => {
       TableName: tableName,
       Item: JSON.stringify({
         id,
+        connectionIds: [connectionId],
       }),
     };
 
