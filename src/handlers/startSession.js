@@ -5,6 +5,8 @@ const docClient = new dynamodb.DocumentClient();
 const tableName = process.env.SESSION_TABLE;
 
 exports.handler = async (event) => {
+  console.info('received:', event);
+
   const { action, id } = JSON.parse(event.body);
   const { connectionId } = event.requestContext;
   if (action !== 'startsession') {
