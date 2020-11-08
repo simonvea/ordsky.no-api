@@ -1,23 +1,32 @@
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const docClient = new dynamodb.DocumentClient();
 
-const tableName = process.env.SAMPLE_TABLE;
+const tableName = process.env.SESSION_TABLE;
 
 /**
  * Updates table with cloud.
  */
-exports.cloudHandler = async (event) => {
+exports.handler = async (event) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
-  const { id, cloud } = JSON.parse(event.body);
+  const { id, cloud, action } = JSON.parse(event.body);
   const { connectionId } = event.requestContext;
 
-  if (!id || !cloud || !connectionId) {
+  if (action !== 'savecloud') {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: `Tried handling the wrong action: ${action}. I'm supposed to handle: savecloud`,
+      }),
+    };
+  }
+
+  if (!id || !cloud) {
     return {
       statusCode: 400,
       body: JSON.stringify({
-        message: 'The request needs id, words and a connectionId',
+        message: 'The request needs id and cloud',
       }),
     };
   }
@@ -45,8 +54,6 @@ exports.cloudHandler = async (event) => {
   };
 
   // All log statements are written to CloudWatch
-  console.info(
-    `response from: ${connectionId} statusCode: ${response.statusCode}`
-  );
+  console.info(`response from: ${action} statusCode: ${response.statusCode}`);
   return response;
 };
