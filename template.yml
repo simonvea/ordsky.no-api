@@ -5,7 +5,33 @@ Description: >
 Transform:
   - AWS::Serverless-2016-10-31
 
+Parameters:
+  AmazonAPIGatewayPushToCloudWatchLogs:
+    Type: String
+    Description: The arn of the managed apigateway push to cloudwatch logs policy
+
 Resources:
+  CloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Lets API Gateway push to CloudWatch logs
+      ManagedPolicyArns:
+        - !Ref AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt CloudWatchLogsRole.Arn
+
   OrdskyWebsocket:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -32,6 +58,18 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StartSessionFunction.Arn}/invocations
+  StartSessionIntegResponse:
+    Type: AWS::ApiGatewayV2::IntegrationResponse
+    Properties:
+      IntegrationId: !Ref StartSessionInteg
+      ApiId: !Ref OrdskyWebsocket
+      IntegrationResponseKey: $default
+  StartSessionResponseRoute:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteId: !Ref StartSessionRoute
+      RouteResponseKey: $default
 
   SaveWordsRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -52,6 +90,12 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveWordsFunction.Arn}/invocations
+  SaveWordsResponseRoute:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteId: !Ref SaveWordsRoute
+      RouteResponseKey: $default
 
   SaveCloudRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -72,6 +116,12 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveCloudFunction.Arn}/invocations
+  SaveCloudResponseRoute:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteId: !Ref SaveCloudRoute
+      RouteResponseKey: $default
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -88,6 +138,8 @@ Resources:
       Description: Prod Stage
       DeploymentId: !Ref Deployment
       ApiId: !Ref OrdskyWebsocket
+      DefaultRouteSettings:
+        LoggingLevel: INFO
 
   StartSessionFunction:
     Type: AWS::Serverless::Function
@@ -179,7 +231,7 @@ Resources:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
       Environment:
         Variables:
-          DOMAIN_NAME: !Ref OrdskyWebsocket
+          DOMAIN_NAME: !Sub ${OrdskyWebsocket}.execute-api.${AWS::Region}.amazonaws.com/
           STAGE: Prod
       Events:
         Stream:
@@ -194,9 +246,9 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: OrdskySession
-      AttrubuteDefinition:
+      AttributeDefinitions:
         - AttributeName: id
-          AttributeType: String
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
