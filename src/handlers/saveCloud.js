@@ -1,5 +1,7 @@
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+'use strict';
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE;
 
@@ -36,7 +38,7 @@ exports.handler = async (event) => {
   const params = {
     TableName: tableName,
     Key: {
-      id,
+      id: id.toString(),
     },
     ReturnValues: 'UPDATED_NEW',
     AttributeUpdates: {
@@ -47,13 +49,19 @@ exports.handler = async (event) => {
     },
   };
 
-  await docClient.update(params).promise();
-
-  const response = {
-    statusCode: 201,
-  };
-
-  // All log statements are written to CloudWatch
-  console.info(`response from: ${action} statusCode: ${response.statusCode}`);
-  return response;
+  try {
+    await docClient.update(params).promise();
+    console.info('Successfully updated database with cloud');
+    return {
+      statusCode: 200,
+    };
+  } catch (e) {
+    console.error('Failed to update db with cloud:', e);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Failed to update db with cloud.',
+      }),
+    };
+  }
 };

@@ -1,6 +1,7 @@
 'use strict';
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE;
 
@@ -28,15 +29,17 @@ exports.handler = async (event) => {
 
   const params = {
     TableName: tableName,
-    Item: JSON.stringify({
-      id,
-      connectionIds: [connectionId],
-    }),
+    Item: {
+      id: id.toString(),
+      connectionIds: docClient.createSet([connectionId]),
+    },
   };
 
   try {
     await docClient.put(params).promise();
+    console.info('successfully saved id and connectionId');
   } catch (e) {
+    console.error('failed to save ids:', e);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -47,5 +50,8 @@ exports.handler = async (event) => {
 
   return {
     statusCode: 200,
+    body: JSON.stringify({
+      message: `successfully started session with id ${id}`,
+    }),
   };
 };
