@@ -1,0 +1,6 @@
+{
+  "body": {
+    "action": "startsession",
+    "id": "12345"
+  }
+}

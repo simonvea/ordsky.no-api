@@ -11,5 +11,10 @@
   },
   "scripts": {
     "test": "jest"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/jestEnv.js"
+    ]
   }
 }
