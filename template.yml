@@ -103,7 +103,7 @@ Resources:
       Environment:
         Variables:
           SESSION_TABLE: !Ref OrdskySessionTable
-  OnConnectPermission:
+  StartSessionPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - OrdskyWebsocket
