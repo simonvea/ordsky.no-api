@@ -1,113 +1,212 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
-
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
 AWSTemplateFormatVersion: 2010-09-09
-Description: >-
+Description: >
   ordsky-apiv2
-
-# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+  Handles word cloud sessions for ordsky.no
 Transform:
-- AWS::Serverless-2016-10-31
+  - AWS::Serverless-2016-10-31
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  OrdskyWebsocket:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: OrdskyWebsocket
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: '$request.body.action'
 
-  # This is a Lambda function config associated with the source code: get-all-items.js
-  getAllItemsFunction:
+  StartSessionRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteKey: startsession
+      AuthorizationType: NONE
+      OperationName: StartSessionRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref StartSessionInteg
+  StartSessionInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      Description: Start Session Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StartSessionFunction.Arn}/invocations
+
+  SaveWordsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteKey: savewords
+      AuthorizationType: NONE
+      OperationName: SaveWordsRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref SaveWordsInteg
+  SaveWordsInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      Description: Save Words Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveWordsFunction.Arn}/invocations
+
+  SaveCloudRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteKey: savecloud
+      AuthorizationType: NONE
+      OperationName: SaveCloudRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref SaveCloudInteg
+  SaveCloudInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      Description: Save Cloud Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveCloudFunction.Arn}/invocations
+
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - StartSessionRoute
+      - SaveWordsRoute
+      - SaveCloudRoute
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      DeploymentId: !Ref Deployment
+      ApiId: !Ref OrdskyWebsocket
+
+  StartSessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Handler: src/handlers/startSession.handler
       Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      MemorySize: 256
+      Timeout: 3
+      Description: Saves admin connection Id to table
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+            TableName: !Ref OrdskySessionTable
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+          SESSION_TABLE: !Ref OrdskySessionTable
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - OrdskyWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StartSessionFunction
+      Principal: apigateway.amazonaws.com
 
-  # This is a Lambda function config associated with the source code: get-by-id.js
-  getByIdFunction:
+  SaveWordsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
+      Handler: src/handlers/saveWords.handler
       Runtime: nodejs12.x
       MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+      Timeout: 5
+      Description: Save words to a DynamoDB table.
+      Tracing: Active
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+            TableName: !Ref OrdskySessionTable
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /{id}
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+          SESSION_TABLE: !Ref OrdskySessionTable
+  SaveWordsPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - OrdskyWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SaveWordsFunction
+      Principal: apigateway.amazonaws.com
 
-  # This is a Lambda function config associated with the source code: put-item.js
-  putItemFunction:
+  SaveCloudFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/put-item.putItemHandler
+      Handler: src/handlers/saveCloud.handler
       Runtime: nodejs12.x
       MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      Timeout: 5
+      Description: Saves cloud to DynamoDB table.
+      Tracing: Active
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+            TableName: !Ref OrdskySessionTable
       Environment:
         Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: POST
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
-
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
+          SESSION_TABLE: !Ref OrdskySessionTable
+  SaveCloudPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - OrdskyWebsocket
     Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SaveCloudFunction
+      Principal: apigateway.amazonaws.com
+
+  ProcessDynamoDBStream:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/dynamoDBStream.handler
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 10
+      Description: Notifies listeners about update in table
+      Tracing: Active
+      Policies:
+        - AWSLambdaDynamoDBExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - 'execute-api:ManageConnections'
+              Resource:
+                - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
+      Environment:
+        Variables:
+          DOMAIN_NAME: !Ref OrdskyWebsocket
+          STAGE: Prod
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt OrdskySessionTable.StreamArn
+            BatchSize: 1
+            StartingPosition: LATEST
+
+  # DynamoDB table to store words and clouds
+  OrdskySessionTable:
+    Type: AWS::DynamoDB::Table
+    TableName: OrdskySession
+    Properties:
+      AttrubuteDefinition:
+        - AttributeName: id
+          AttributeType: String
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  WebSocketURI:
+    Description: 'API Gateway endpoint URL for Prod stage'
+    Value: !Sub 'wss://${OrdskyWebsocket}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/'
