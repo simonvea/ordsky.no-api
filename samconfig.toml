@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "ordsky-api"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1vua95jvl7pno"
+s3_prefix = "ordsky-api"
+region = "eu-north-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "AmazonAPIGatewayPushToCloudWatchLogs=\"arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs\""
