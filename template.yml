@@ -44,6 +44,7 @@ Resources:
     Properties:
       ApiId: !Ref OrdskyWebsocket
       RouteKey: startsession
+      RouteResponseSelectionExpression: $default
       AuthorizationType: NONE
       OperationName: StartSessionRoute
       Target: !Join
@@ -76,6 +77,7 @@ Resources:
     Properties:
       ApiId: !Ref OrdskyWebsocket
       RouteKey: savewords
+      RouteResponseSelectionExpression: $default
       AuthorizationType: NONE
       OperationName: SaveWordsRoute
       Target: !Join
@@ -102,6 +104,7 @@ Resources:
     Properties:
       ApiId: !Ref OrdskyWebsocket
       RouteKey: savecloud
+      RouteResponseSelectionExpression: $default
       AuthorizationType: NONE
       OperationName: SaveCloudRoute
       Target: !Join
