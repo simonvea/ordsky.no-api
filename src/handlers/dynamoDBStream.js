@@ -10,10 +10,12 @@ const apigwManagementApi = new AWS.ApiGatewayManagementApi({
 });
 
 exports.handler = async (event) => {
+  console.info('Received:', event);
   const postCalls = event.Records.map((record) => {
     const { eventName } = record;
     // We only care about modified records
     if (eventName !== 'MODIFY') return;
+    console.info('Handling record', record);
     const oldImage = record.dynamodb.OldImage;
     const newImage = record.dynamodb.NewImage;
 
@@ -22,6 +24,7 @@ exports.handler = async (event) => {
     if (!oldImage.cloud && newImage.cloud) {
       // Send cloud
       const cloud = newImage.cloud;
+      console.info('sending cloud to connectionIds', cloud);
 
       return connectionIds.map(async (connectionId) => {
         try {
@@ -30,6 +33,7 @@ exports.handler = async (event) => {
             .promise();
         } catch (e) {
           if (e.statusCode === 410) {
+            console.info('Found stale connection, but dont care');
             // We don't care about a stale connection in this case, as the session is finnished.
           } else {
             throw e;
@@ -46,6 +50,10 @@ exports.handler = async (event) => {
       // Notify about numberOfEntries
       const numberOfEntries = newImage.numberOfEntries;
 
+      console.info(
+        'Sending number of entries to connectionIds',
+        numberOfEntries
+      );
       return connectionIds.map(async (connectionId) => {
         try {
           await apigwManagementApi
