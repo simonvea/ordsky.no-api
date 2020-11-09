@@ -1,4 +1,4 @@
-const lambda = require('../../../src/handlers/cloudHandler.js');
+const lambda = require('../../../src/handlers/saveCloud.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
 describe('Test cloudHandler', () => {
@@ -37,6 +37,7 @@ describe('Test cloudHandler', () => {
         connectionId: 1,
       },
       body: JSON.stringify({
+        action: 'savecloud',
         id: 1,
         cloud,
       }),
@@ -47,7 +48,7 @@ describe('Test cloudHandler', () => {
     };
 
     // Act
-    const result = await lambda.cloudHandler(event);
+    const result = await lambda.handler(event);
 
     // Assert
     expect(result).toEqual(expectedResult);

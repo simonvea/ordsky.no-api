@@ -53,7 +53,7 @@ exports.handler = async (event) => {
     await docClient.update(params).promise();
     console.info('Successfully updated database with cloud');
     return {
-      statusCode: 200,
+      statusCode: 201,
     };
   } catch (e) {
     console.error('Failed to update db with cloud:', e);
