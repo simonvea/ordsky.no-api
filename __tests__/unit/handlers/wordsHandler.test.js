@@ -1,12 +1,10 @@
-const lambda = require('../../../src/handlers/wordsHandler.js');
+const lambda = require('../../../src/handlers/saveWords.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
 describe('Test wordsHandler', () => {
   let updateSpy;
 
   beforeAll(() => {
-    // Mock dynamodb update methods
-    // https://jestjs.io/docs/en/jest-object.html#jestspyonobject-methodname
     updateSpy = jest.spyOn(dynamodb.DocumentClient.prototype, 'update');
   });
 
@@ -29,18 +27,19 @@ describe('Test wordsHandler', () => {
         connectionId: 1,
       },
       body: JSON.stringify({
+        action: 'savewords',
         id: 1,
         words,
       }),
     };
 
     const expectedResult = {
-      statusCode: 200,
+      statusCode: 201,
       body: JSON.stringify({ numberOfEntries: 1 }),
     };
 
     // Act
-    const result = await lambda.wordsHandler(event);
+    const result = await lambda.handler(event);
 
     // Assert
     expect(result).toEqual(expectedResult);
