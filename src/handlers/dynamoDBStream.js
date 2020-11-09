@@ -1,33 +1,42 @@
-const AWS = require('aws-sdk');
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+'use strict';
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const docClient = new AWS.DynamoDB.DocumentClient();
 
-// https://github.com/aws-samples/simple-websockets-chat-app/blob/master/template.yaml
-
-// TODO: Ensure these are available
 const { DOMAIN_NAME, STAGE } = process.env;
 const apigwManagementApi = new AWS.ApiGatewayManagementApi({
   apiVersion: '2018-11-29',
-  endpoint:
-    // event.requestContext.domainName + '/' + event.requestContext.stage,
-    DOMAIN_NAME + '/' + STAGE,
+  endpoint: DOMAIN_NAME + '/' + STAGE,
 });
 
 exports.handler = async (event) => {
-  let postCalls = [];
-
-  event.Records.foreach((record) => {
+  const postCalls = event.Records.map((record) => {
+    const { eventName } = record;
+    // We only care about modified records
+    if (eventName !== 'MODIFY') return;
     const oldImage = record.dynamodb.OldImage;
     const newImage = record.dynamodb.NewImage;
 
-    const { connectionIds } = record.dynamodb.NewImage;
+    const { connectionIds, id } = record.dynamodb.NewImage;
 
-    const data = {
-      connectionIds,
-      numberOfEntries: undefined,
-      cloud: undefined,
-    };
+    if (!oldImage.cloud && newImage.cloud) {
+      // Send cloud
+      const cloud = newImage.cloud;
 
+      return connectionIds.map(async (connectionId) => {
+        try {
+          await apigwManagementApi
+            .postToConnection({ ConnectionId: connectionId, Data: { cloud } })
+            .promise();
+        } catch (e) {
+          if (e.statusCode === 410) {
+            // We don't care about a stale connection in this case, as the session is finnished.
+          } else {
+            throw e;
+          }
+        }
+      });
+    }
     // We only want to update if there is a difference in words or cloud.
     // TODO: Does words get prefaces with type?
     if (
@@ -35,32 +44,35 @@ exports.handler = async (event) => {
       oldImage.numberOfEntries !== newImage.numberOfEntries
     ) {
       // Notify about numberOfEntries
-      data.numberOfEntries = newImage.numberOfEntries;
-    }
+      const numberOfEntries = newImage.numberOfEntries;
 
-    if (!oldImage.cloud && newImage.cloud) {
-      // Send cloud
-      data.cloud = newImage.cloud;
-    }
-    postCalls.push(
-      connectionIds.map(async ({ connectionId }) => {
+      return connectionIds.map(async (connectionId) => {
         try {
           await apigwManagementApi
-            .postToConnection({ ConnectionId: connectionId, Data: data })
+            .postToConnection({
+              ConnectionId: connectionId,
+              Data: { numberOfEntries },
+            })
             .promise();
         } catch (e) {
           if (e.statusCode === 410) {
             console.log(`Found stale connection, deleting ${connectionId}`);
-            // Remove the stale connectionId
-            // await docClient
-            //   .update({ TableName: TABLE_NAME, Key: { id } })
-            //   .promise();
+            //Remove the stale connectionId
+            await docClient
+              .update({
+                TableName: TABLE_NAME,
+                Key: { id },
+                UpdateExpression: 'DELETE connectionIds :id',
+                ExpressionAttributeValues: { ':id': connectionId },
+                ReturnValues: 'NONE',
+              }) //DELETE requires that it is a set (which it is:D)
+              .promise();
           } else {
             throw e;
           }
         }
-      })
-    );
+      });
+    }
   });
 
   try {
