@@ -5,6 +5,13 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE;
 
+// TODO: Must be implement in template, or fetched from request...
+const { DOMAIN_NAME, STAGE } = process.env;
+const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+  apiVersion: '2018-11-29',
+  endpoint: DOMAIN_NAME + '/' + STAGE,
+});
+
 /**
  * Updates table with words.
  */
@@ -53,17 +60,10 @@ exports.handler = async (event) => {
     },
   };
 
+  let result;
   try {
-    const result = await docClient.update(params).promise();
+    result = await docClient.update(params).promise();
     console.info('Updated db, response:', result);
-
-    const { numberOfEntries } = result.Attributes;
-    const response = {
-      statusCode: 201,
-      body: JSON.stringify({ numberOfEntries }),
-    };
-    console.info(`response from: ${action} responded: ${response}`);
-    return response;
   } catch (e) {
     console.error('Failed to save to db. Error:', e);
     return {
@@ -73,4 +73,56 @@ exports.handler = async (event) => {
       }),
     };
   }
+
+  try {
+    const { numberOfEntries, connectionIds } = result.Attributes;
+
+    await postToConnectionIds(id, connectionIds.values, {
+      type: 'WORDS_ADDED',
+      numberOfEntries,
+    });
+
+    console.info(
+      `Successfully sendt number of entries to connections: ${numberOfEntries}`
+    );
+  } catch (e) {
+    console.error('Failed to send number of entries to connections', e);
+  }
+
+  return { statusCode: 200, body: JSON.stringify({ message: 'Success' }) }; // TODO: Should response be included?
 };
+
+// We want to do this here instead of in streams in order to be more syncronous
+// However, this might mean that some listeners will receive the wrong number of entries due to concurrency issues?
+async function postToConnectionIds(itemId, connectionIds, data) {
+  const promises = connectionIds.map(async (connectionId) => {
+    try {
+      await apigwManagementApi
+        .postToConnection({
+          ConnectionId: connectionId,
+          Data: JSON.stringify(data),
+        })
+        .promise();
+      console.info('posted to ', connectionId);
+    } catch (e) {
+      if (e.statusCode === 410) {
+        console.log(`Found stale connection, deleting ${connectionId}`);
+        //Remove the stale connectionId
+        await docClient
+          .update({
+            TableName: tableName,
+            Key: { id: itemId },
+            UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
+            ExpressionAttributeValues: {
+              ':id': docClient.createSet([connectionId]),
+            },
+            ReturnValues: 'NONE',
+          })
+          .promise();
+      } else {
+        throw e;
+      }
+    }
+  });
+  return Promise.all(promises);
+}
