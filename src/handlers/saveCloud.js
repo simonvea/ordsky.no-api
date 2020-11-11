@@ -13,7 +13,7 @@ exports.handler = async (event) => {
   console.info('received:', event);
 
   const { id, cloud, action } = JSON.parse(event.body);
-  const { connectionId } = event.requestContext;
+  const { domainName, stage } = event.requestContext;
 
   if (action !== 'savecloud') {
     return {
@@ -33,28 +33,26 @@ exports.handler = async (event) => {
     };
   }
 
-  // Creates a new item, or replaces an old item with a new item
-  // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
   const params = {
     TableName: tableName,
     Key: {
       id: id.toString(),
     },
-    ReturnValues: 'UPDATED_NEW',
-    AttributeUpdates: {
-      cloud: {
-        Action: 'PUT',
-        Value: cloud,
-      },
+    ReturnValues: 'ALL_OLD', // Don't need to return saved cloud as it is already here, but we need all conenctionIds
+    UpdateExpression: 'SET cloud = :cloud',
+    ExpressionAttributeValues: {
+      ':cloud': cloud,
     },
+    ReturnConsumedCapacity: 'TOTAL',
   };
 
+  let result;
   try {
-    await docClient.update(params).promise();
-    console.info('Successfully updated database with cloud');
-    return {
-      statusCode: 201,
-    };
+    result = await docClient.update(params).promise();
+    console.info(
+      'Successfully updated database with cloud, consumed write capacity:',
+      result.ConsumedCapacity.WriteCapacityUnits
+    ); // TODO: Fix this as it is undefined..
   } catch (e) {
     console.error('Failed to update db with cloud:', e);
     return {
@@ -64,4 +62,58 @@ exports.handler = async (event) => {
       }),
     };
   }
+
+  // We want to do this here instead of in streams in order to be more syncronous
+  // However, this might mean that some listeners will receive the wrong number of entries due to concurrency issues?
+  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+    endpoint: `https://${domainName}/${stage}`,
+  });
+
+  const { connectionIds } = result.Attributes;
+
+  const message = {
+    type: 'CLOUD_CREATED',
+    cloud,
+  };
+
+  const messages = connectionIds.values.map(async (connectionId) => {
+    try {
+      await apigwManagementApi
+        .postToConnection({
+          ConnectionId: connectionId,
+          Data: JSON.stringify(message),
+        })
+        .promise();
+      console.info('posted to ', connectionId);
+    } catch (e) {
+      if (e.statusCode === 410) {
+        console.log(`Found stale connection, deleting ${connectionId}`);
+        //Remove the stale connectionId
+        await docClient
+          .update({
+            TableName: tableName,
+            Key: { id },
+            UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
+            ExpressionAttributeValues: {
+              ':id': docClient.createSet([connectionId]),
+            },
+            ReturnValues: 'NONE',
+          })
+          .promise();
+      } else {
+        throw e;
+      }
+    }
+  });
+
+  try {
+    await Promise.all(messages);
+
+    console.info(`Successfully sendt cloud to connections: ${cloud}`);
+  } catch (e) {
+    console.error('Failed to send cloud to connections', e);
+  }
+
+  return { statusCode: 200, body: JSON.stringify({ message: 'Success' }) }; // TODO: Should response be included?
 };
