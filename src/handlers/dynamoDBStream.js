@@ -9,6 +9,7 @@ const apigwManagementApi = new AWS.ApiGatewayManagementApi({
   endpoint: DOMAIN_NAME + '/' + STAGE,
 });
 
+// TODO: Figure out if it is best to send messages from this, or when it is entered. There might be concurrency issues in terms of messages to listeners if it is done directly?
 exports.handler = async (event) => {
   console.info('Received:', event);
   const postCalls = event.Records.map((record) => {
@@ -16,10 +17,15 @@ exports.handler = async (event) => {
     // We only care about modified records
     if (eventName !== 'MODIFY') return;
     console.info('Handling record', record);
-    const oldImage = record.dynamodb.OldImage;
-    const newImage = record.dynamodb.NewImage;
+    const oldImage = AWS.DynamoDB.Converter.unmarshall(
+      record.dynamodb.OldImage
+    );
+    const newImage = AWS.DynamoDB.Converter.unmarshall(
+      record.dynamodb.NewImage
+    );
 
-    const { connectionIds, id } = record.dynamodb.NewImage;
+    const id = record.dynamodb.NewImage.id; // string
+    const connectionIds = record.dynamodb.NewImage.connectionIds; // String set
 
     if (!oldImage.cloud && newImage.cloud) {
       // Send cloud
@@ -29,7 +35,10 @@ exports.handler = async (event) => {
       return connectionIds.map(async (connectionId) => {
         try {
           await apigwManagementApi
-            .postToConnection({ ConnectionId: connectionId, Data: { cloud } })
+            .postToConnection({
+              ConnectionId: connectionId,
+              Data: JSON.stringify({ cloud }),
+            })
             .promise();
         } catch (e) {
           if (e.statusCode === 410) {
@@ -42,11 +51,7 @@ exports.handler = async (event) => {
       });
     }
     // We only want to update if there is a difference in words or cloud.
-    // TODO: Does words get prefaces with type?
-    if (
-      newImage.numberOfEntries &&
-      oldImage.numberOfEntries !== newImage.numberOfEntries
-    ) {
+    if (oldImage.numberOfEntries !== newImage.numberOfEntries) {
       // Notify about numberOfEntries
       const numberOfEntries = newImage.numberOfEntries;
 
@@ -59,7 +64,7 @@ exports.handler = async (event) => {
           await apigwManagementApi
             .postToConnection({
               ConnectionId: connectionId,
-              Data: { numberOfEntries },
+              Data: JSON.stringify({ numberOfEntries }),
             })
             .promise();
         } catch (e) {
