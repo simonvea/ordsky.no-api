@@ -77,7 +77,6 @@ Resources:
     Properties:
       ApiId: !Ref OrdskyWebsocket
       RouteKey: savewords
-      RouteResponseSelectionExpression: $default
       AuthorizationType: NONE
       OperationName: SaveWordsRoute
       Target: !Join
@@ -92,19 +91,12 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveWordsFunction.Arn}/invocations
-  SaveWordsResponseRoute:
-    Type: AWS::ApiGatewayV2::RouteResponse
-    Properties:
-      ApiId: !Ref OrdskyWebsocket
-      RouteId: !Ref SaveWordsRoute
-      RouteResponseKey: $default
 
   SaveCloudRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref OrdskyWebsocket
       RouteKey: savecloud
-      RouteResponseSelectionExpression: $default
       AuthorizationType: NONE
       OperationName: SaveCloudRoute
       Target: !Join
@@ -119,12 +111,6 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveCloudFunction.Arn}/invocations
-  SaveCloudResponseRoute:
-    Type: AWS::ApiGatewayV2::RouteResponse
-    Properties:
-      ApiId: !Ref OrdskyWebsocket
-      RouteId: !Ref SaveCloudRoute
-      RouteResponseKey: $default
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -150,7 +136,7 @@ Resources:
       Handler: src/handlers/startSession.handler
       Runtime: nodejs12.x
       MemorySize: 256
-      Timeout: 3
+      Timeout: 2
       Description: Saves admin connection Id to table
       Policies:
         - DynamoDBCrudPolicy:
@@ -172,13 +158,19 @@ Resources:
     Properties:
       Handler: src/handlers/saveWords.handler
       Runtime: nodejs12.x
-      MemorySize: 128
+      MemorySize: 512 # TODO: Figure out the best size in terms of time-price
       Timeout: 5
       Description: Save words to a DynamoDB table.
       Tracing: Active
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
+        - Statement: # TODO: Make this a policy document
+            - Effect: Allow
+              Action:
+                - 'execute-api:ManageConnections'
+              Resource:
+                - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
       Environment:
         Variables:
           SESSION_TABLE: !Ref OrdskySessionTable
@@ -203,6 +195,12 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - 'execute-api:ManageConnections'
+              Resource:
+                - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
       Environment:
         Variables:
           SESSION_TABLE: !Ref OrdskySessionTable
@@ -214,35 +212,6 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SaveCloudFunction
       Principal: apigateway.amazonaws.com
-
-  ProcessDynamoDBStream:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/dynamoDBStream.handler
-      Runtime: nodejs12.x
-      MemorySize: 256
-      Timeout: 10
-      Description: Notifies listeners about update in table
-      Tracing: Active
-      Policies:
-        - AWSLambdaDynamoDBExecutionRole
-        - Statement:
-            - Effect: Allow
-              Action:
-                - 'execute-api:ManageConnections'
-              Resource:
-                - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
-      Environment:
-        Variables:
-          DOMAIN_NAME: !Sub ${OrdskyWebsocket}.execute-api.${AWS::Region}.amazonaws.com/
-          STAGE: Prod
-      Events:
-        Stream:
-          Type: DynamoDB
-          Properties:
-            Stream: !GetAtt OrdskySessionTable.StreamArn
-            BatchSize: 1
-            StartingPosition: LATEST
 
   # DynamoDB table to store words and clouds
   OrdskySessionTable:
@@ -258,8 +227,6 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
   WebSocketURI:
