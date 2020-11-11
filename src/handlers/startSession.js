@@ -27,10 +27,13 @@ exports.handler = async (event) => {
     };
   }
 
+  // Initializing all attributes so that we can do a SET updateExpression later
   const params = {
     TableName: tableName,
     Item: {
       id: id.toString(),
+      numberOfEntries: 0,
+      words: [],
       connectionIds: docClient.createSet([connectionId]),
     },
   };
