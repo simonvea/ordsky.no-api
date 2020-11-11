@@ -5,13 +5,6 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE;
 
-// TODO: Must be implement in template, or fetched from request...
-const { DOMAIN_NAME, STAGE } = process.env;
-const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-  apiVersion: '2018-11-29',
-  endpoint: DOMAIN_NAME + '/' + STAGE,
-});
-
 /**
  * Updates table with words.
  */
@@ -20,7 +13,7 @@ exports.handler = async (event) => {
   console.info('received:', event);
 
   const { id, words, action } = JSON.parse(event.body);
-  const { connectionId } = event.requestContext;
+  const { connectionId, domainName, stage } = event.requestContext;
 
   if (action !== 'savewords') {
     return {
@@ -74,33 +67,25 @@ exports.handler = async (event) => {
     };
   }
 
-  try {
-    const { numberOfEntries, connectionIds } = result.Attributes;
+  // We want to do this here instead of in streams in order to be more syncronous
+  // However, this might mean that some listeners will receive the wrong number of entries due to concurrency issues?
+  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+    endpoint: `https://${domainName}/${stage}`,
+  });
 
-    await postToConnectionIds(id, connectionIds.values, {
-      type: 'WORDS_ADDED',
-      numberOfEntries,
-    });
+  const { numberOfEntries, connectionIds } = result.Attributes;
 
-    console.info(
-      `Successfully sendt number of entries to connections: ${numberOfEntries}`
-    );
-  } catch (e) {
-    console.error('Failed to send number of entries to connections', e);
-  }
-
-  return { statusCode: 200, body: JSON.stringify({ message: 'Success' }) }; // TODO: Should response be included?
-};
-
-// We want to do this here instead of in streams in order to be more syncronous
-// However, this might mean that some listeners will receive the wrong number of entries due to concurrency issues?
-async function postToConnectionIds(itemId, connectionIds, data) {
-  const promises = connectionIds.map(async (connectionId) => {
+  const message = {
+    type: 'WORDS_ADDED',
+    numberOfEntries,
+  };
+  const messages = connectionIds.values.map(async (connectionId) => {
     try {
       await apigwManagementApi
         .postToConnection({
           ConnectionId: connectionId,
-          Data: JSON.stringify(data),
+          Data: JSON.stringify(message),
         })
         .promise();
       console.info('posted to ', connectionId);
@@ -111,7 +96,7 @@ async function postToConnectionIds(itemId, connectionIds, data) {
         await docClient
           .update({
             TableName: tableName,
-            Key: { id: itemId },
+            Key: { id },
             UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
             ExpressionAttributeValues: {
               ':id': docClient.createSet([connectionId]),
@@ -124,5 +109,16 @@ async function postToConnectionIds(itemId, connectionIds, data) {
       }
     }
   });
-  return Promise.all(promises);
-}
+
+  try {
+    await Promise.all(messages);
+
+    console.info(
+      `Successfully sendt number of entries to connections: ${numberOfEntries}`
+    );
+  } catch (e) {
+    console.error('Failed to send number of entries to connections', e);
+  }
+
+  return { statusCode: 200, body: JSON.stringify({ message: 'Success' }) }; // TODO: Should response be included?
+};
