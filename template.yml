@@ -9,6 +9,9 @@ Parameters:
   AmazonAPIGatewayPushToCloudWatchLogs:
     Type: String
     Description: The arn of the managed apigateway push to cloudwatch logs policy
+  OrdskyACM:
+    Type: String
+    Description: The arn of the ordsky certificate in ACM
 
 Resources:
   CloudWatchLogsRole:
@@ -31,6 +34,16 @@ Resources:
     Type: AWS::ApiGateway::Account
     Properties:
       CloudWatchRoleArn: !GetAtt CloudWatchLogsRole.Arn
+
+  OrdskyDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: api.ordsky.no
+      DomainNameConfigurations:
+        - CertificateArn: !Ref OrdskyACM
+          CertificateName: ordsky
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
 
   OrdskyWebsocket:
     Type: AWS::ApiGatewayV2::Api
@@ -129,6 +142,13 @@ Resources:
       ApiId: !Ref OrdskyWebsocket
       DefaultRouteSettings:
         LoggingLevel: INFO
+
+  OrdskyApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      DomainName: api.ordsky.no
+      Stage: !Ref Stage
 
   StartSessionFunction:
     Type: AWS::Serverless::Function
