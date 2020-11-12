@@ -105,6 +105,33 @@ Resources:
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveWordsFunction.Arn}/invocations
 
+  GetWordsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteKey: getwords
+      RouteResponseSelectionExpression: $default
+      AuthorizationType: NONE
+      OperationName: GetWordsRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref GetWordsInteg
+  GetWordsInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      Description: Get Words Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetWordsFunction.Arn}/invocations
+  GetWordsResponseRoute:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      ApiId: !Ref OrdskyWebsocket
+      RouteId: !Ref GetWordsRoute
+      RouteResponseKey: $default
+
   SaveCloudRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -203,6 +230,30 @@ Resources:
       FunctionName: !Ref SaveWordsFunction
       Principal: apigateway.amazonaws.com
 
+  GetWordsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/getWords.handler
+      Runtime: nodejs12.x
+      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
+      Timeout: 3
+      Description: Get words from table.
+      Tracing: Active
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdskySessionTable
+      Environment:
+        Variables:
+          SESSION_TABLE: !Ref OrdskySessionTable
+  GetWordsPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - OrdskyWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetWordsFunction
+      Principal: apigateway.amazonaws.com
+
   SaveCloudFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -241,6 +292,14 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
+        - AttributeName: connectionIds
+          AttributeType: SS
+        - AttributeName: words
+          AttributeType: L
+        - AttributeName: numberOfEntries
+          AttributeType: N
+        - AttributeName: cloud
+          AttributeType: L
       KeySchema:
         - AttributeName: id
           KeyType: HASH
