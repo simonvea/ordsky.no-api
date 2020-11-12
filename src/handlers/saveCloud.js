@@ -67,7 +67,9 @@ exports.handler = async (event) => {
   // However, this might mean that some listeners will receive the wrong number of entries due to concurrency issues?
   const apigwManagementApi = new AWS.ApiGatewayManagementApi({
     apiVersion: '2018-11-29',
-    endpoint: `https://${domainName}/${stage}`,
+    endpoint: domainName.includes('ordsky') // Custom domain names already includes stage
+      ? `https://${domainName}`
+      : `https://${domainName}/${stage}`,
   });
 
   const { connectionIds } = result.Attributes;
