@@ -117,5 +117,5 @@ exports.handler = async (event) => {
     console.error('Failed to send cloud to connections', e);
   }
 
-  return { statusCode: 200, body: JSON.stringify({ message: 'Success' }) }; // TODO: Should response be included?
+  return { statusCode: 200, body: JSON.stringify(message) }; // TODO: Should response be included?
 };

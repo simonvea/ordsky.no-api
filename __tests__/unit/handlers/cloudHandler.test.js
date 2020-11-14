@@ -1,8 +1,10 @@
 const lambda = require('../../../src/handlers/saveCloud.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
+const apigatewaymanagementapi = require('aws-sdk/clients/apigatewaymanagementapi');
 
 describe('Test cloudHandler', () => {
   let updateSpy;
+  const gwMock = jest.fn(() => ({ promise: jest.fn() }));
 
   beforeAll(() => {
     // Mock dynamodb update methods
@@ -15,7 +17,7 @@ describe('Test cloudHandler', () => {
     updateSpy.mockRestore();
   });
 
-  it('should return statusCode 201', async () => {
+  it('should send cloud to connections', async () => {
     // Arrange
     const cloud = [
       { text: 'I', size: 70, fill: '#14a825' },
@@ -28,13 +30,34 @@ describe('Test cloudHandler', () => {
       { text: 'SOM', size: 20, fill: '#aa2927' },
     ];
 
+    const connectionIds = { values: ['12125512'] };
+
     updateSpy.mockReturnValue({
-      promise: () => Promise.resolve(),
+      promise: () =>
+        Promise.resolve({
+          Attributes: {
+            cloud,
+            numberOfEntries: 1,
+            connectionIds,
+          },
+          ConsumedCapacity: {
+            TableName: 'OrdskySession',
+          },
+        }),
     });
+
+    Object.defineProperty(
+      apigatewaymanagementapi.prototype,
+      'postToConnection',
+      {
+        value: gwMock,
+      }
+    );
 
     const event = {
       requestContext: {
         connectionId: 1,
+        domainName: 'api.ordsky.no',
       },
       body: JSON.stringify({
         action: 'savecloud',
@@ -44,13 +67,17 @@ describe('Test cloudHandler', () => {
     };
 
     const expectedResult = {
-      statusCode: 201,
+      ConnectionId: connectionIds.values[0],
+      Data: JSON.stringify({
+        type: 'CLOUD_CREATED',
+        cloud,
+      }),
     };
 
     // Act
-    const result = await lambda.handler(event);
+    await lambda.handler(event);
 
     // Assert
-    expect(result).toEqual(expectedResult);
+    expect(gwMock).toHaveBeenCalledWith(expectedResult);
   });
 });
