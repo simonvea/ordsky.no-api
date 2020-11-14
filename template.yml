@@ -180,7 +180,8 @@ Resources:
   StartSessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/startSession.handler
+      CodeUri: src/start-session/
+      Handler: startSession.handler
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 2
@@ -203,9 +204,10 @@ Resources:
   SaveWordsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/saveWords.handler
+      CodeUri: src/save-words
+      Handler: saveWords.handler
       Runtime: nodejs12.x
-      MemorySize: 512 # TODO: Figure out the best size in terms of time-price
+      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 5
       Description: Save words to a DynamoDB table.
       Tracing: Active
@@ -233,7 +235,8 @@ Resources:
   GetWordsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/getWords.handler
+      CodeUri: src/get-words/
+      Handler: getWords.handler
       Runtime: nodejs12.x
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 3
@@ -257,9 +260,10 @@ Resources:
   SaveCloudFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/saveCloud.handler
+      CodeUri: src/save-cloud/
+      Handler: saveCloud.handler
       Runtime: nodejs12.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 5
       Description: Saves cloud to DynamoDB table.
       Tracing: Active
@@ -304,8 +308,31 @@ Resources:
         - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 2
+
+  OrdskySessionWriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: OrdskySessionTable
+    Properties:
+      MaxCapacity: 25
+      MinCapacity: 2
+      ResourceId: !Sub table/${OrdskySessionTable}
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
+      ScalableDimension: 'dynamodb:table:WriteCapacityUnits'
+      ServiceNamespace: dynamodb
+  OrdskySessionWriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref OrdskySessionWriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70 # means 70 percent of the current provisioned throughput
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
 
 Outputs:
   WebSocketURI:

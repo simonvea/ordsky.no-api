@@ -1,0 +1,12 @@
+{
+  "name": "save-cloud",
+  "description": "Saves cloud to dynamodb",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "aws-xray-sdk": "^3.2.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.437.0"
+  }
+}
