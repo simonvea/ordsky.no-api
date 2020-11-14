@@ -11,7 +11,7 @@ Parameters:
     Description: The arn of the managed apigateway push to cloudwatch logs policy
   OrdskyACM:
     Type: String
-    Description: The arn of the ordsky certificate in ACM
+    Description: The id of the ordsky certificate in ACM
 
 Resources:
   CloudWatchLogsRole:
@@ -40,7 +40,7 @@ Resources:
     Properties:
       DomainName: api.ordsky.no
       DomainNameConfigurations:
-        - CertificateArn: !Ref OrdskyACM
+        - CertificateArn: !Sub arn:aws:acm:eu-north-1:${AWS::AccountId}:certificate/${OrdskyACM}
           CertificateName: ordsky
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
