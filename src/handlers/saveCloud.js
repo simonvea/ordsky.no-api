@@ -51,8 +51,8 @@ exports.handler = async (event) => {
     result = await docClient.update(params).promise();
     console.info(
       'Successfully updated database with cloud, consumed write capacity:',
-      result.ConsumedCapacity.WriteCapacityUnits
-    ); // TODO: Fix this as it is undefined..
+      result.ConsumedCapacity
+    );
   } catch (e) {
     console.error('Failed to update db with cloud:', e);
     return {
