@@ -1,12 +1,6 @@
 {
-  "name": "save-cloud",
-  "description": "Saves cloud to dynamodb",
+  "name": "ordsky-api",
+  "description": "The backend API for ordsky.no",
   "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "aws-xray-sdk": "^3.2.0"
-  },
-  "devDependencies": {
-    "aws-sdk": "^2.437.0"
-  }
+  "private": true
 }

@@ -13,6 +13,15 @@ Parameters:
     Type: String
     Description: The id of the ordsky certificate in ACM
 
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    Layers:
+      - !Ref OrdskyDepLayer
+    Environment:
+      Variables:
+        SESSION_TABLE: !Ref OrdskySessionTable
+
 Resources:
   CloudWatchLogsRole:
     Type: AWS::IAM::Role
@@ -182,16 +191,13 @@ Resources:
     Properties:
       CodeUri: src/start-session/
       Handler: startSession.handler
-      Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 2
       Description: Saves admin connection Id to table
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
-      Environment:
-        Variables:
-          SESSION_TABLE: !Ref OrdskySessionTable
+
   StartSessionPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -206,7 +212,6 @@ Resources:
     Properties:
       CodeUri: src/save-words
       Handler: saveWords.handler
-      Runtime: nodejs12.x
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 5
       Description: Save words to a DynamoDB table.
@@ -220,9 +225,6 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
-      Environment:
-        Variables:
-          SESSION_TABLE: !Ref OrdskySessionTable
   SaveWordsPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -237,7 +239,6 @@ Resources:
     Properties:
       CodeUri: src/get-words/
       Handler: getWords.handler
-      Runtime: nodejs12.x
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 3
       Description: Get words from table.
@@ -245,9 +246,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
-      Environment:
-        Variables:
-          SESSION_TABLE: !Ref OrdskySessionTable
+
   GetWordsPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -262,7 +261,6 @@ Resources:
     Properties:
       CodeUri: src/save-cloud/
       Handler: saveCloud.handler
-      Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 5
       Description: Saves cloud to DynamoDB table.
@@ -276,9 +274,7 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
-      Environment:
-        Variables:
-          SESSION_TABLE: !Ref OrdskySessionTable
+
   SaveCloudPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -287,6 +283,19 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SaveCloudFunction
       Principal: apigateway.amazonaws.com
+
+  OrdskyDepLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: ordsky-no-dependencies
+      Description: Dependencies for ordsky session api
+      ContentUri: dependencies/
+      CompatibleRuntimes:
+        - nodejs12.x
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Delete #Could also be Retain if I want to keep every version..
+    Metadata:
+      BuildMethod: makefile
 
   # DynamoDB table to store words and clouds
   OrdskySessionTable:
