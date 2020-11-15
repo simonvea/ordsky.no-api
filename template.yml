@@ -309,6 +309,13 @@ Resources:
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
       ScalableDimension: 'dynamodb:table:WriteCapacityUnits'
       ServiceNamespace: dynamodb
+      ScheduledActions:
+        - ScalableTargetAction:
+            MaxCapacity: 25
+            MinCapacity: 5
+          Schedule: cron(0 8-17 ? * MON-FRI *) # Every mon-fri 8-17
+          ScheduledActionName: Weekly autoscaling
+
   OrdskySessionWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
