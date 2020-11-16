@@ -39,13 +39,18 @@ exports.handler = async (event) => {
       id: id.toString(),
     },
     ReturnValues: 'ALL_OLD', // Don't need to return saved cloud as it is already here, but we need all conenctionIds
-    UpdateExpression: 'SET cloud = :cloud',
+    UpdateExpression: 'SET cloud = :cloud, #exp = #exp + :exp',
+    ExpressionAttributeNames: {
+      '#exp': 'expdate',
+    },
     ExpressionAttributeValues: {
       ':cloud': cloud,
+      ':exp': 60 * 60 * 24 * 365, // Adds one year to expiry date
     },
     ReturnConsumedCapacity: 'TOTAL',
   };
 
+  // TODO: Save cloud async if that takes a lot of time, SQS for instance...
   let result;
   try {
     result = await docClient.update(params).promise();

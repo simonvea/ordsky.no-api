@@ -35,6 +35,7 @@ exports.handler = async (event) => {
       numberOfEntries: 0,
       words: [],
       connectionIds: docClient.createSet([connectionId]),
+      expdate: Math.floor(new Date().getTime() / 1000 + 60 * 60 * 2), // Expires in two hours
     },
   };
 

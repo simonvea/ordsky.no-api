@@ -292,12 +292,17 @@ Resources:
           AttributeType: N
         - AttributeName: cloud
           AttributeType: L
+        - AttributeName: expdate
+          AttributeType: N
       KeySchema:
         - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 3
         WriteCapacityUnits: 2
+      TimeToLiveSpecification:
+        AttributeName: expdate
+        Enabled: True
 
   OrdskySessionWriteCapacityScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
