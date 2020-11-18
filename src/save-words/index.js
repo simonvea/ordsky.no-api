@@ -12,17 +12,8 @@ exports.handler = async (event) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
-  const { id, words, action } = JSON.parse(event.body);
+  const { id, words } = JSON.parse(event.body);
   const { connectionId, domainName, stage } = event.requestContext;
-
-  if (action !== 'savewords') {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        message: `Tried handling the wrong action: ${action}. I'm supposed to handle: savewords`,
-      }),
-    };
-  }
 
   if (!id || !words) {
     console.info('The request was missing id or words');

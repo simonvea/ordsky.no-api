@@ -158,7 +158,7 @@ Resources:
       Description: Save Cloud Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaveCloudFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HandleCloudFunction.Arn}/invocations
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -209,7 +209,7 @@ Resources:
     Properties:
       CodeUri: src/save-words/
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
-      Timeout: 5
+      Timeout: 3
       Description: Save words to a DynamoDB table.
       Tracing: Active
       Policies:
@@ -250,14 +250,17 @@ Resources:
       FunctionName: !Ref GetWordsFunction
       Principal: apigateway.amazonaws.com
 
-  SaveCloudFunction:
+  HandleCloudFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/save-cloud/
-      MemorySize: 256
-      Timeout: 5
+      CodeUri: src/handle-cloud/
+      MemorySize: 512 # We want this to be quick
+      Timeout: 3
       Description: Saves cloud to DynamoDB table.
       Tracing: Active
+      Environment:
+        Variables:
+          SQS_URL: !Ref SaveCloudSQS
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -267,14 +270,43 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
-  SaveCloudPermission:
+        - Statement:
+          - Effect: Allow
+            Action: 
+              - 'sqs:SendMessage'
+            Resource:
+              - !GetAtt SaveCloudSQS.Arn
+
+  HandleCloudPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - OrdskyWebsocket
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref SaveCloudFunction
+      FunctionName: !Ref HandleCloudFunction
       Principal: apigateway.amazonaws.com
+
+  SaveCloudFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Save cloud
+      CodeUri: src/save-cloud/
+      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
+      Timeout: 2
+      Description: Save cloud to a DynamoDB table.
+      Tracing: Active
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdskySessionTable
+      Events:
+        SaveCloudSQSEvent:
+          Type: SQS
+          Properties: 
+            Queue: !GetAtt SaveCloudSQS.Arn
+            BatchSize: 1
+
+  SaveCloudSQS:
+    Type: AWS::SQS::Queue
 
   # DynamoDB table to store words and clouds
   OrdskySessionTable:
