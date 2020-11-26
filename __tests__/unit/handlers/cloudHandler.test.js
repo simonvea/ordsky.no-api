@@ -1,4 +1,4 @@
-const lambda = require('../../../src/handlers/saveCloud.js');
+const lambda = require('../../../src/handle-cloud/index.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const apigatewaymanagementapi = require('aws-sdk/clients/apigatewaymanagementapi');
 
@@ -7,9 +7,7 @@ describe('Test cloudHandler', () => {
   const gwMock = jest.fn(() => ({ promise: jest.fn() }));
 
   beforeAll(() => {
-    // Mock dynamodb update methods
-    // https://jestjs.io/docs/en/jest-object.html#jestspyonobject-methodname
-    updateSpy = jest.spyOn(dynamodb.DocumentClient.prototype, 'update');
+    updateSpy = jest.spyOn(dynamodb.DocumentClient.prototype, 'get');
   });
 
   // Clean up mocks
@@ -35,9 +33,7 @@ describe('Test cloudHandler', () => {
     updateSpy.mockReturnValue({
       promise: () =>
         Promise.resolve({
-          Attributes: {
-            cloud,
-            numberOfEntries: 1,
+          Item: {
             connectionIds,
           },
           ConsumedCapacity: {

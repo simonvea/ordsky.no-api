@@ -1,4 +1,4 @@
-const lambda = require('../../../src/handlers/saveWords.js');
+const lambda = require('../../../src/save-words/index.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const apigatewaymanagementapi = require('aws-sdk/clients/apigatewaymanagementapi');
 

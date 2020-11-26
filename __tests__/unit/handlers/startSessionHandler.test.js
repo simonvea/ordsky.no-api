@@ -1,5 +1,5 @@
 'use strict';
-const lambda = require('../../../src/handlers/startSession.js');
+const lambda = require('../../../src/start-session/index.js');
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
 // jest.mock('aws-sdk');
@@ -17,10 +17,19 @@ describe('StartSession handler', () => {
   afterAll(() => {
     putSpy.mockRestore();
   });
+
   it('responds with 200 if payload contains id and action is startsession', async () => {
     // Arrange
-
     const id = '2';
+    // For some reason I need to mock a return value or else I get an IAM complaint in pipeline..
+    putSpy.mockReturnValue({
+      promise: () =>
+        Promise.resolve({
+          Attributes: {
+            id,
+          },
+        }),
+    });
     const event = {
       requestContext: {
         connectionId: 1,
@@ -66,27 +75,7 @@ describe('StartSession handler', () => {
     // Assert
     expect(response.statusCode).toEqual(expected.statusCode);
   });
-  it('responds with statusCode 500 if it is invoked on wrong action', async () => {
-    // Arrange
-    const event = {
-      requestContext: {
-        connectionId: 1,
-      },
-      body: JSON.stringify({
-        action: 'savewords',
-      }),
-    };
 
-    const expected = {
-      statusCode: 500,
-    };
-
-    // Act
-    const response = await lambda.handler(event);
-
-    // Assert
-    expect(response.statusCode).toEqual(expected.statusCode);
-  });
   it('when payload contains id, calls dynamodb put', async () => {
     // Arrange
     putSpy.mockClear();
