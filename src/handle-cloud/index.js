@@ -93,7 +93,7 @@ exports.handler = async (event) => {
   try {
     await Promise.all(messages);
 
-    console.info(`Successfully sendt cloud to connections: ${cloud}`);
+    console.info('Successfully sendt cloud to connections.');
   } catch (e) {
     console.error('Failed to send cloud to connections', e);
   }
