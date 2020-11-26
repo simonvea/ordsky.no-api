@@ -1,0 +1,6 @@
+{
+  "Parameters": {
+    "AmazonAPIGatewayPushToCloudWatchLogs": "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
+    "OrdskyACM": "baa465ed-ed23-40f9-bacc-86b8035a89cc"
+  }
+}

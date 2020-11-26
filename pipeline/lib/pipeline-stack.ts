@@ -71,6 +71,7 @@ export class PipelineStack extends cdk.Stack {
       actions: [
         new codepipeline_actions.CloudFormationCreateReplaceChangeSetAction({
           actionName: 'CreateChangeSet',
+          templateConfiguration: buildOutput.atPath('prod-config.json'),
           templatePath: buildOutput.atPath('packaged.yaml'),
           stackName: 'ordsky-api',
           adminPermissions: true,
