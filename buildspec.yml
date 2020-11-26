@@ -1,22 +1,26 @@
 version: 0.2
 phases:
   install:
+    runtime-versions:
+      nodejs: 12
     commands:
-      # Install all dependencies (including dependencies for running tests)
+      # Upgrading SAM CLI to latest version
+      - pip3 install --upgrade aws-sam-cli
+      - sam --version
+      # Install dependencies for running tests
       - npm install
   pre_build:
     commands:
       # Discover and run unit tests in the '__tests__' directory
       - npm run test
-      # Remove all unit tests to reduce the size of the package that will be ultimately uploaded to Lambda
-      - rm -rf ./__tests__
-      # Remove all dependencies not needed for the Lambda deployment package (the packages from devDependencies in package.json)
-      - npm prune --production
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
-      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
+      - sam build
+  post_build:
+    commands:
+      - sam package --s3-bucket $PACKAGE_BUCKET --output-template-file packaged.yaml
 artifacts:
-  type: zip
+  discard-paths: yes
   files:
-    - template-export.yml
+    - packaged.yaml
