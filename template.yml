@@ -212,6 +212,8 @@ Resources:
       Timeout: 3
       Description: Save words to a DynamoDB table.
       Tracing: Active
+      Layers:
+        - !Ref OrdskyDepLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -256,11 +258,10 @@ Resources:
       CodeUri: src/handle-cloud/
       MemorySize: 512 # We want this to be quick
       Timeout: 3
-      Description: Saves cloud to DynamoDB table.
+      Description: Sends cloud to connections and saves cloud to DynamoDB table.
       Tracing: Active
-      Environment:
-        Variables:
-          SQS_URL: !Ref SaveCloudSQS
+      Layers:
+        - !Ref OrdskyDepLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -270,12 +271,6 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
-        - Statement:
-          - Effect: Allow
-            Action: 
-              - 'sqs:SendMessage'
-            Resource:
-              - !GetAtt SaveCloudSQS.Arn
 
   HandleCloudPermission:
     Type: AWS::Lambda::Permission
@@ -286,27 +281,18 @@ Resources:
       FunctionName: !Ref HandleCloudFunction
       Principal: apigateway.amazonaws.com
 
-  SaveCloudFunction:
-    Type: AWS::Serverless::Function
+  OrdskyDepLayer:
+    Type: AWS::Serverless::LayerVersion
     Properties:
-      Description: Save cloud
-      CodeUri: src/save-cloud/
-      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
-      Timeout: 2
-      Description: Save cloud to a DynamoDB table.
-      Tracing: Active
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrdskySessionTable
-      Events:
-        SaveCloudSQSEvent:
-          Type: SQS
-          Properties: 
-            Queue: !GetAtt SaveCloudSQS.Arn
-            BatchSize: 1
-
-  SaveCloudSQS:
-    Type: AWS::SQS::Queue
+      LayerName: ordsky-no-dependencies
+      Description: Dependencies for ordsky session api
+      ContentUri: src/common/
+      CompatibleRuntimes:
+        - nodejs12.x
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Delete #Could also be Retain if I want to keep every version..
+    Metadata:
+      BuildMethod: makefile
 
   # DynamoDB table to store words and clouds
   OrdskySessionTable:

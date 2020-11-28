@@ -1,0 +1,13 @@
+{
+  "name": "ordsky-websocket-deps",
+  "description": "Dependencies for the websocket API for ordsky.no",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "aws-xray-sdk": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.10",
+    "aws-sdk": "^2.437.0"
+  }
+}
