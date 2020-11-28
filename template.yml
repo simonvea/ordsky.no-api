@@ -17,6 +17,8 @@ Globals:
   Function:
     Runtime: nodejs12.x
     Handler: index.handler
+    Layers:
+      - !Ref OrdskyDepLayer
     Environment:
       Variables:
         SESSION_TABLE: !Ref OrdskySessionTable
@@ -212,8 +214,6 @@ Resources:
       Timeout: 3
       Description: Save words to a DynamoDB table.
       Tracing: Active
-      Layers:
-        - !Ref OrdskyDepLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -260,8 +260,6 @@ Resources:
       Timeout: 3
       Description: Sends cloud to connections and saves cloud to DynamoDB table.
       Tracing: Active
-      Layers:
-        - !Ref OrdskyDepLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
