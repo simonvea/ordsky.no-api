@@ -1,14 +1,15 @@
-'use strict';
-const AWSXRay = require('aws-xray-sdk');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+import AWSXRay from 'aws-xray-sdk';
+import AWSSDK from 'aws-sdk';
+import { APIGatewayEvent } from 'aws-lambda';
+const AWS = AWSXRay.captureAWS(AWSSDK);
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-const tableName = process.env.SESSION_TABLE;
+const tableName = process.env.SESSION_TABLE as string;
 
-exports.handler = async (event) => {
+exports.handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);
 
-  const { id } = JSON.parse(event.body);
+  const { id } = JSON.parse(event.body as string);
   const { connectionId } = event.requestContext;
 
   if (!id) {
@@ -27,7 +28,7 @@ exports.handler = async (event) => {
       id: id.toString(),
       numberOfEntries: 0,
       words: [],
-      connectionIds: docClient.createSet([connectionId]),
+      connectionIds: docClient.createSet([connectionId as string]),
       expdate: Math.floor(new Date().getTime() / 1000 + 60 * 60 * 2), // Expires in two hours
     },
   };

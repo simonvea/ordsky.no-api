@@ -7,10 +7,10 @@ phases:
       # Upgrading SAM CLI to latest version
       - pip3 install --upgrade aws-sam-cli
       - sam --version
-      # Install dependencies for running tests
       - npm install
   pre_build:
     commands:
+      - npm run build
       # Discover and run unit tests in the '__tests__' directory
       - npm run test
   build:

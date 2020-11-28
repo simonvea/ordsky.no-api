@@ -1,15 +1,17 @@
 'use strict';
-const AWSXRay = require('aws-xray-sdk');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+import AWSXRay from 'aws-xray-sdk';
+import AWSSDK from 'aws-sdk';
+import { APIGatewayEvent } from 'aws-lambda';
+const AWS = AWSXRay.captureAWS(AWSSDK);
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-const tableName = process.env.SESSION_TABLE;
+const tableName = process.env.SESSION_TABLE as string;
 
-exports.handler = async (event) => {
+exports.handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
-  const { id } = JSON.parse(event.body);
+  const { id } = JSON.parse(event.body!);
 
   if (!id) {
     return {
@@ -45,7 +47,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { words } = data.Item;
+  const { words } = data.Item as { words: string[] };
 
   return {
     statusCode: 200,
