@@ -8,8 +8,8 @@
     "@types/node": "^14.14.10",
     "aws-sdk": "^2.437.0",
     "aws-xray-sdk": "^3.2.0",
+    "gw-helpers": "file:./src/common/nodejs/gw-helpers",
     "jest": "^24.7.1",
-    "opt": "file:./src/common",
     "typescript": "^4.1.2"
   },
   "scripts": {

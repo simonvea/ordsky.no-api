@@ -1,6 +1,6 @@
 'use strict';
 import { saveCloudToId } from './saveCloud';
-import { sendToConnections, getConnections } from 'opt/nodejs/gwHelpers';
+import { sendToConnections, getConnections } from 'gw-helpers';
 
 /**
  * Updates table with cloud.

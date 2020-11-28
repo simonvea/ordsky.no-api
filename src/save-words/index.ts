@@ -1,6 +1,6 @@
 'use strict';
 import { APIGatewayEvent } from 'aws-lambda';
-import { removeConnectionId, sendToConnections } from 'opt/nodejs/gwHelpers';
+import { removeConnectionId, sendToConnections } from 'gw-helpers';
 import { saveWordsAndConnectionId } from './saveWords';
 
 /**
