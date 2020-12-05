@@ -2,9 +2,11 @@ import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.SESSION_TABLE as string;
+const region = process.env.AWS_REGION as string;
+
+const docClient = new AWS.DynamoDB.DocumentClient({ region });
 
 exports.handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);

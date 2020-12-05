@@ -17,11 +17,13 @@ Globals:
   Function:
     Runtime: nodejs12.x
     Handler: index.handler
+    Tracing: Active
     Layers:
       - !Ref OrdskyDepLayer
     Environment:
       Variables:
         SESSION_TABLE: !Ref OrdskySessionTable
+        ENDPOINT: !Sub 'https://${OrdskyDomainName}'
 
 Resources:
   CloudWatchLogsRole:
@@ -213,7 +215,6 @@ Resources:
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 3
       Description: Save words to a DynamoDB table.
-      Tracing: Active
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -239,7 +240,6 @@ Resources:
       MemorySize: 256 # TODO: Figure out the best size in terms of time-price
       Timeout: 3
       Description: Get words from table.
-      Tracing: Active
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -259,7 +259,6 @@ Resources:
       MemorySize: 512 # We want this to be quick
       Timeout: 3
       Description: Sends cloud to connections and saves cloud to DynamoDB table.
-      Tracing: Active
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -310,12 +309,14 @@ Resources:
           AttributeType: L
         - AttributeName: expdate
           AttributeType: N
+        - AttributeName: wordCount
+          AttributeType: L
       KeySchema:
         - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 3
-        WriteCapacityUnits: 2
+        WriteCapacityUnits: 3
       TimeToLiveSpecification:
         AttributeName: expdate
         Enabled: True
@@ -324,18 +325,22 @@ Resources:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     DependsOn: OrdskySessionTable
     Properties:
-      MaxCapacity: 25
-      MinCapacity: 2
+      MaxCapacity: 8
+      MinCapacity: 3
       ResourceId: !Sub table/${OrdskySessionTable}
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
       ScalableDimension: 'dynamodb:table:WriteCapacityUnits'
       ServiceNamespace: dynamodb
       ScheduledActions:
         - ScalableTargetAction:
-            MaxCapacity: 25
+            MaxCapacity: 10
             MinCapacity: 5
           Schedule: cron(0 8-17 ? * MON-FRI *) # Every mon-fri 8-17
           ScheduledActionName: Weekly autoscaling
+        - ScalableTargetAction:
+            MaxCapacity: 3
+          Schedule: cron(0 17 ? * MON-FRI *) # We want to scale down outside of the hours above
+          ScheduledActionName: Weekly descaling
 
   OrdskySessionWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy

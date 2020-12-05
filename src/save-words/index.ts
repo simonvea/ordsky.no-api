@@ -11,7 +11,7 @@ exports.handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);
 
   const { id, words } = JSON.parse(event.body!);
-  const { connectionId, domainName, stage } = event.requestContext;
+  const { connectionId } = event.requestContext;
 
   if (!id || !words) {
     console.info('The request was missing id or words');
@@ -36,10 +36,6 @@ exports.handler = async (event: APIGatewayEvent) => {
     };
   }
 
-  const endpoint = domainName!.includes('ordsky')
-    ? `https://${domainName}`
-    : `https://${domainName}/${stage}`; // If using custom domain it is only the domain name that is needed
-
   const { numberOfEntries, connectionIds } = result;
   const connections = connectionIds.values;
 
@@ -55,7 +51,6 @@ exports.handler = async (event: APIGatewayEvent) => {
   try {
     await sendToConnections({
       message,
-      endpoint,
       connections,
       onStaleConnection,
     });

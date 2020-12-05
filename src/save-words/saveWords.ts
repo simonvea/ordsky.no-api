@@ -1,9 +1,10 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const docClient = new AWS.DynamoDB.DocumentClient({ region: 'eu-north-1' });
-
+const region = process.env.AWS_REGION as string;
 const tableName = process.env.SESSION_TABLE!;
+
+const docClient = new AWS.DynamoDB.DocumentClient({ region });
 
 export async function saveWordsAndConnectionId(
   words: string[],

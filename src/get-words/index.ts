@@ -3,9 +3,10 @@ import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const docClient = new AWS.DynamoDB.DocumentClient();
-
+const region = process.env.AWS_REGION as string;
 const tableName = process.env.SESSION_TABLE as string;
+
+const docClient = new AWS.DynamoDB.DocumentClient({ region });
 
 exports.handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
@@ -24,17 +25,7 @@ exports.handler = async (event: APIGatewayEvent) => {
 
   let data;
   try {
-    data = await docClient
-      .get({
-        TableName: tableName,
-        Key: {
-          id,
-        },
-        AttributesToGet: ['words'],
-        ConsistentRead: true, // We want to be sure all words are there
-        ReturnConsumedCapacity: 'TOTAL',
-      })
-      .promise();
+    data = await getWords(id);
 
     console.info('Successfully retrieved words', data);
   } catch (e) {
@@ -57,3 +48,17 @@ exports.handler = async (event: APIGatewayEvent) => {
     }),
   };
 };
+
+async function getWords(id: string) {
+  return await docClient
+    .get({
+      TableName: tableName,
+      Key: {
+        id,
+      },
+      AttributesToGet: ['words'],
+      ConsistentRead: true, // We want to be sure all words are there
+      ReturnConsumedCapacity: 'TOTAL',
+    })
+    .promise();
+}

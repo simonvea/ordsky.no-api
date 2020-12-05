@@ -9,8 +9,7 @@ export const handler = async (event: any) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
-  const { id, cloud } = JSON.parse(event.body);
-  const { domainName, stage } = event.requestContext;
+  const { id, cloud, wordCount } = JSON.parse(event.body);
 
   // TODO: See if this can be checked by API GW
   if (!id || !cloud) {
@@ -35,19 +34,15 @@ export const handler = async (event: any) => {
     };
   }
 
-  const endpoint = domainName.includes('ordsky') // Custom domain names already includes stage
-    ? `https://${domainName}`
-    : `https://${domainName}/${stage}`;
-
   const message = {
     type: 'CLOUD_CREATED',
     cloud,
+    wordCount,
   };
 
   try {
     await sendToConnections({
       message,
-      endpoint,
       connections,
     });
 
@@ -57,7 +52,7 @@ export const handler = async (event: any) => {
   }
 
   try {
-    const result = await saveCloudToId(cloud, id);
+    const result = await saveCloudToId(cloud, id, wordCount);
     console.info(
       'Successfully updated database with cloud, consumed write capacity:',
       result.ConsumedCapacity

@@ -1,8 +1,15 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const docClient = new AWS.DynamoDB.DocumentClient({ region: 'eu-north-1' });
+const region = process.env.REGION as string;
 const tableName = process.env.SESSION_TABLE!;
+const endpoint = process.env.ENDPOINT;
+
+const docClient = new AWS.DynamoDB.DocumentClient({ region });
+const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+  apiVersion: '2018-11-29',
+  endpoint,
+});
 
 export async function removeConnectionId(connectionId: string, key: string) {
   return docClient
@@ -46,7 +53,6 @@ export async function getConnections(id: string): Promise<string[]> {
 type SaveToConnectionsArg = {
   message: Record<string, any>;
   connections: string[];
-  endpoint: string;
   onStaleConnection?: (staleConnection: string) => Promise<void>;
 };
 
@@ -54,14 +60,8 @@ type SaveToConnectionsArg = {
 export async function sendToConnections({
   message,
   connections,
-  endpoint,
   onStaleConnection = (staleConnection: string) => Promise.resolve(),
 }: SaveToConnectionsArg) {
-  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-    apiVersion: '2018-11-29',
-    endpoint,
-  });
-
   const messages = connections.map(async (connectionId) => {
     try {
       await apigwManagementApi
