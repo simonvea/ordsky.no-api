@@ -6,7 +6,7 @@ import { saveWordsAndConnectionId } from './saveWords';
 /**
  * Updates table with words.
  */
-exports.handler = async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
@@ -35,6 +35,7 @@ exports.handler = async (event: APIGatewayEvent) => {
       }),
     };
   }
+  console.log('result', result);
 
   const { numberOfEntries, connectionIds } = result;
   const connections = connectionIds.values;

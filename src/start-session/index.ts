@@ -8,7 +8,7 @@ const region = process.env.AWS_REGION as string;
 
 const docClient = new AWS.DynamoDB.DocumentClient({ region });
 
-exports.handler = async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);
 
   const { id } = JSON.parse(event.body as string);

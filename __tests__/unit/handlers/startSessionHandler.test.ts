@@ -1,12 +1,13 @@
 'use strict';
-const lambda = require('../../../src/start-session/index.js');
-const dynamodb = require('aws-sdk/clients/dynamodb');
+import { handler } from '../../../src/start-session/index';
+import dynamodb from 'aws-sdk/clients/dynamodb';
+import { APIGatewayEvent, APIGatewayProxyEvent } from 'aws-lambda';
 
 // jest.mock('aws-sdk');
 // jest.mock('aws-xray-sdk');
 
 describe('StartSession handler', () => {
-  let putSpy;
+  let putSpy: jest.SpyInstance;
   beforeAll(() => {
     // Mock dynamodb put methods
     // https://jestjs.io/docs/en/jest-object.html#jestspyonobject-methodname
@@ -48,7 +49,7 @@ describe('StartSession handler', () => {
     };
 
     // Act
-    const response = await lambda.handler(event);
+    const response = await handler((event as unknown) as APIGatewayEvent);
 
     // Assert
     expect(response).toEqual(expected);
@@ -70,7 +71,7 @@ describe('StartSession handler', () => {
     };
 
     // Act
-    const response = await lambda.handler(event);
+    const response = await handler((event as unknown) as APIGatewayEvent);
 
     // Assert
     expect(response.statusCode).toEqual(expected.statusCode);
@@ -92,7 +93,7 @@ describe('StartSession handler', () => {
     };
 
     // Act
-    await lambda.handler(event);
+    await handler((event as unknown) as APIGatewayEvent);
 
     // Assert
     expect(putSpy).toHaveBeenCalled();
