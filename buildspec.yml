@@ -10,11 +10,12 @@ phases:
       - npm install
   pre_build:
     commands:
-      - npm run build
+      - npm run check
       # Discover and run unit tests in the '__tests__' directory
       - npm run test
-      # Remove mock files because we don't need to upload them
-      - find . -name __mocks__ -type d -exec rm -rf {} \;
+      - npm run build
+      # Remove mock files because we don't want to upload them
+      - find . -name __mocks__ -type d -exec rm -rf {} +
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
