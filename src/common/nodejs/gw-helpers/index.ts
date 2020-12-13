@@ -1,11 +1,13 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
+
+AWSSDK.config.logger = console;
+
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const region = process.env.REGION as string;
 const tableName = process.env.SESSION_TABLE!;
 const endpoint = process.env.ENDPOINT;
 
-const docClient = new AWS.DynamoDB.DocumentClient({ region });
+const docClient = new AWS.DynamoDB.DocumentClient();
 const apigwManagementApi = new AWS.ApiGatewayManagementApi({
   apiVersion: '2018-11-29',
   endpoint,

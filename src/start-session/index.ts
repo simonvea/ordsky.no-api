@@ -1,12 +1,14 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
+
+AWSSDK.config.logger = console;
+
 const AWS = AWSXRay.captureAWS(AWSSDK);
 
 const tableName = process.env.SESSION_TABLE as string;
-const region = process.env.AWS_REGION as string;
 
-const docClient = new AWS.DynamoDB.DocumentClient({ region });
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 export const handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);
@@ -33,6 +35,7 @@ export const handler = async (event: APIGatewayEvent) => {
       connectionIds: docClient.createSet([connectionId as string]),
       expdate: Math.floor(new Date().getTime() / 1000 + 60 * 60 * 2), // Expires in two hours
     },
+    ReturnConsumedCapacity: 'TOTAL',
   };
 
   try {

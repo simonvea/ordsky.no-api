@@ -1,10 +1,12 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
+
+AWSSDK.config.logger = console;
+
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const region = process.env.AWS_REGION as string;
 const tableName = process.env.SESSION_TABLE!;
 
-const docClient = new AWS.DynamoDB.DocumentClient({ region });
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 export async function saveWordsAndConnectionId(
   words: string[],
@@ -28,10 +30,10 @@ export async function saveWordsAndConnectionId(
       ':ne': 1,
       ':id': docClient.createSet([connectionId]),
     },
+    ReturnConsumedCapacity: 'TOTAL',
   };
 
   const result = await docClient.update(params).promise();
-  console.info('Updated db, response:', result);
 
   return result.Attributes as {
     words: string[];

@@ -2,11 +2,13 @@
 import AWSXRay from 'aws-xray-sdk';
 import AWSSDK from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
+
+AWSSDK.config.logger = console;
+
 const AWS = AWSXRay.captureAWS(AWSSDK);
-const region = process.env.AWS_REGION as string;
 const tableName = process.env.SESSION_TABLE as string;
 
-const docClient = new AWS.DynamoDB.DocumentClient({ region });
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
@@ -26,8 +28,6 @@ exports.handler = async (event: APIGatewayEvent) => {
   let data;
   try {
     data = await getWords(id);
-
-    console.info('Successfully retrieved words', data);
   } catch (e) {
     console.error('Failed to retrieve item from db', e);
     return {
