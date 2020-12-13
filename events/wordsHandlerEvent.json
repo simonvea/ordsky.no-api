@@ -1,9 +1,6 @@
 {
   "requestContext": {
-    "connectionId": 1
+    "connectionId": "XYY0lcNdgi0Adgw="
   },
-  "body": {
-    "id": 1,
-    "words": ["one", "two", "three"]
-  }
+  "body": "{ \"id\": \"12345\", \"words\": [\"one\", \"two\", \"three\",  \"three\",  \"three\",  \"three\",  \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\", \"three\"]}"
 }

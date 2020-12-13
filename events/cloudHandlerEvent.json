@@ -1,7 +1,7 @@
 {
   "requestContext": {
-    "connectionId": 1,
+    "connectionId": "XYY0lcNdgi0Adgw=",
     "domainName": "api.ordsky.no"
   },
-  "body": "{ \"action\": \"savecloud\", \"id\": \"12345\",\"cloud\": [{ \"text\": \"I\", \"size\": 70, \"fill\": \"#14a825\" },{ \"text\": \"PÅ\", \"size\": 36.61538461538462, \"fill\": \"#57d16a\" },{ \"text\": \"OG\", \"size\": 36.61538461538462, \"fill\": \"#16ad7d\" },{ \"text\": \"ER\", \"size\": 35.53846153846153, \"fill\": \"#e0c070\" },{ \"text\": \"DET\", \"size\": 33.38461538461539, \"fill\": \"#97efdd\" },{ \"text\": \"TIL\", \"size\": 21.53846153846154, \"fill\": \"#06549e\" },{ \"text\": \"FOR\", \"size\": 20, \"fill\": \"#2f89d8\" },]}"
+  "body": "{ \"action\": \"savecloud\", \"id\": \"12345\",\"cloud\": [{ \"text\": \"I\", \"size\": 70, \"fill\": \"#14a825\" },{ \"text\": \"PÅ\", \"size\": 36.61538461538462, \"fill\": \"#57d16a\" },{ \"text\": \"OG\", \"size\": 36.61538461538462, \"fill\": \"#16ad7d\" },{ \"text\": \"ER\", \"size\": 35.53846153846153, \"fill\": \"#e0c070\" },{ \"text\": \"DET\", \"size\": 33.38461538461539, \"fill\": \"#97efdd\" },{ \"text\": \"TIL\", \"size\": 21.53846153846154, \"fill\": \"#06549e\" },{ \"text\": \"FOR\", \"size\": 20, \"fill\": \"#2f89d8\" }]}"
 }

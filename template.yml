@@ -20,6 +20,7 @@ Globals:
     Tracing: Active
     Layers:
       - !Ref OrdskyDepLayer
+    AutoPublishAlias: Prod
     Environment:
       Variables:
         SESSION_TABLE: !Ref OrdskySessionTable
@@ -193,8 +194,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/start-session/
-      MemorySize: 256
-      Timeout: 2
+      MemorySize: 1024
+      Timeout: 1
       Description: Saves admin connection Id to table
       Policies:
         - DynamoDBCrudPolicy:
@@ -212,8 +213,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/save-words/
-      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
-      Timeout: 3
+      MemorySize: 1024
+      Timeout: 2
       Description: Save words to a DynamoDB table.
       Policies:
         - DynamoDBCrudPolicy:
@@ -237,8 +238,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/get-words/
-      MemorySize: 256 # TODO: Figure out the best size in terms of time-price
-      Timeout: 3
+      MemorySize: 1024
+      Timeout: 1
       Description: Get words from table.
       Policies:
         - DynamoDBCrudPolicy:
@@ -256,7 +257,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/handle-cloud/
-      MemorySize: 512 # We want this to be quick
+      MemorySize: 1024
       Timeout: 3
       Description: Sends cloud to connections and saves cloud to DynamoDB table.
       Policies:

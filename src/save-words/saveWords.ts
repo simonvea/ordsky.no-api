@@ -35,6 +35,11 @@ export async function saveWordsAndConnectionId(
 
   const result = await docClient.update(params).promise();
 
+  console.info(
+    'Updated table with words. Consumed capacity:',
+    result.ConsumedCapacity
+  );
+
   return result.Attributes as {
     words: string[];
     numberOfEntries: number;

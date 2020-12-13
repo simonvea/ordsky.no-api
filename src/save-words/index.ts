@@ -35,7 +35,6 @@ export const handler = async (event: APIGatewayEvent) => {
       }),
     };
   }
-  console.log('result', result);
 
   const { numberOfEntries, connectionIds } = result;
   const connections = connectionIds.values;
