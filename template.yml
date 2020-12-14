@@ -20,11 +20,13 @@ Globals:
     Tracing: Active
     Layers:
       - !Ref OrdskyDepLayer
+    MemorySize: 1024
     AutoPublishAlias: Prod
     Environment:
       Variables:
         SESSION_TABLE: !Ref OrdskySessionTable
         ENDPOINT: !Sub 'https://${OrdskyDomainName}'
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # This lets lambda reuse connections (setting https to keep-alive). This hopefully speeds up dynamodb queries.
 
 Resources:
   CloudWatchLogsRole:
@@ -194,7 +196,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/start-session/
-      MemorySize: 1024
       Timeout: 1
       Description: Saves admin connection Id to table
       Policies:
@@ -213,7 +214,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/save-words/
-      MemorySize: 1024
       Timeout: 2
       Description: Save words to a DynamoDB table.
       Policies:
@@ -238,7 +238,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/get-words/
-      MemorySize: 1024
       Timeout: 1
       Description: Get words from table.
       Policies:
@@ -257,7 +256,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/handle-cloud/
-      MemorySize: 1024
       Timeout: 3
       Description: Sends cloud to connections and saves cloud to DynamoDB table.
       Policies:
