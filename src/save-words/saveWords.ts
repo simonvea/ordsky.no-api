@@ -1,19 +1,21 @@
 import AWSXRay from 'aws-xray-sdk';
-import AWSSDK from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-AWSSDK.config.logger = console;
+const dynamodb = AWSXRay.captureAWSv3Client(
+  new DynamoDBClient({ logger: console })
+);
 
-const AWS = AWSXRay.captureAWS(AWSSDK);
+const docClient = DynamoDBDocumentClient.from(dynamodb);
+
 const tableName = process.env.SESSION_TABLE!;
-
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 export async function saveWordsAndConnectionId(
   words: string[],
   connectionId: string,
   tableId: string
 ) {
-  const params = {
+  const command = new UpdateCommand({
     TableName: tableName,
     Key: {
       id: tableId,
@@ -28,12 +30,12 @@ export async function saveWordsAndConnectionId(
     ExpressionAttributeValues: {
       ':vals': words,
       ':ne': 1,
-      ':id': docClient.createSet([connectionId]),
+      ':id': new Set(connectionId),
     },
     ReturnConsumedCapacity: 'TOTAL',
-  };
+  });
 
-  const result = await docClient.update(params).promise();
+  const result = await docClient.send(command);
 
   console.info(
     'Updated table with words. Consumed capacity:',
