@@ -1,11 +1,15 @@
 'use strict';
 import AWSXRay from 'aws-xray-sdk';
-import AWSSDK from 'aws-sdk';
-const AWS = AWSXRay.captureAWS(AWSSDK);
-AWSSDK.config.logger = console;
-const tableName = process.env.SESSION_TABLE as string;
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const dynamodb = AWSXRay.captureAWSv3Client(
+  new DynamoDBClient({ logger: console })
+);
+
+const docClient = DynamoDBDocumentClient.from(dynamodb);
+
+const tableName = process.env.SESSION_TABLE as string;
 
 export type WordCount = Array<{
   text: string;
@@ -17,7 +21,7 @@ export async function saveCloudToId(
   id: string,
   wordCount: WordCount = [{ text: '', count: 0 }]
 ) {
-  const params = {
+  const command = new UpdateCommand({
     TableName: tableName,
     Key: {
       id: id,
@@ -33,9 +37,9 @@ export async function saveCloudToId(
       ':exp': 60 * 60 * 24 * 365, // Adds one year to expiry date TODO: Do this here or when fetching data?
     },
     ReturnConsumedCapacity: 'TOTAL',
-  };
+  });
 
-  const result = await docClient.update(params).promise();
+  const result = await docClient.send(command);
 
   return result;
 }
