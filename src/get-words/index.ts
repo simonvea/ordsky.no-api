@@ -1,14 +1,16 @@
 'use strict';
 import AWSXRay from 'aws-xray-sdk';
-import AWSSDK from 'aws-sdk';
 import { APIGatewayEvent } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 
-AWSSDK.config.logger = console;
+const dynamodb = AWSXRay.captureAWSv3Client(
+  new DynamoDBClient({ logger: console })
+);
 
-const AWS = AWSXRay.captureAWS(AWSSDK);
+const docClient = DynamoDBDocumentClient.from(dynamodb);
+
 const tableName = process.env.SESSION_TABLE as string;
-
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
@@ -50,15 +52,15 @@ exports.handler = async (event: APIGatewayEvent) => {
 };
 
 async function getWords(id: string) {
-  return await docClient
-    .get({
-      TableName: tableName,
-      Key: {
-        id,
-      },
-      AttributesToGet: ['words'],
-      ConsistentRead: true, // We want to be sure all words are there
-      ReturnConsumedCapacity: 'TOTAL',
-    })
-    .promise();
+  const command = new GetCommand({
+    TableName: tableName,
+    Key: {
+      id,
+    },
+    AttributesToGet: ['words'],
+    ConsistentRead: true, // We want to be sure all words are there
+    ReturnConsumedCapacity: 'TOTAL',
+  });
+
+  return await docClient.send(command);
 }

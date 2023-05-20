@@ -1,11 +1,11 @@
 {
   "name": "get-words",
   "description": "The backend API for ordsky.no",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
-  "dependencies": {},
   "devDependencies": {
-    "aws-sdk": "^2.437.0",
-    "aws-xray-sdk": "^3.2.0"
+    "@aws-sdk/client-dynamodb": "^3.335.0",
+    "@aws-sdk/lib-dynamodb": "^3.335.0",
+    "aws-xray-sdk": "^3.5.0"
   }
 }
