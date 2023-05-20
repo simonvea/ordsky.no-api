@@ -1,14 +1,16 @@
 import AWSXRay from 'aws-xray-sdk';
-import AWSSDK from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+
 import { APIGatewayEvent } from 'aws-lambda';
 
-AWSSDK.config.logger = console;
+const dynamoDB = AWSXRay.captureAWSv3Client(
+  new DynamoDBClient({ logger: console })
+);
 
-const AWS = AWSXRay.captureAWS(AWSSDK);
+const docClient = DynamoDBDocumentClient.from(dynamoDB);
 
 const tableName = process.env.SESSION_TABLE as string;
-
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 export const handler = async (event: APIGatewayEvent) => {
   console.info('received:', event);
@@ -26,20 +28,20 @@ export const handler = async (event: APIGatewayEvent) => {
   }
 
   // Initializing all attributes so that we can do a SET updateExpression later
-  const params = {
+  const command = new PutCommand({
     TableName: tableName,
     Item: {
       id: id.toString(),
       numberOfEntries: 0,
       words: [],
-      connectionIds: docClient.createSet([connectionId as string]),
+      connectionIds: new Set(connectionId as string),
       expdate: Math.floor(new Date().getTime() / 1000 + 60 * 60 * 2), // Expires in two hours
     },
     ReturnConsumedCapacity: 'TOTAL',
-  };
+  });
 
   try {
-    await docClient.put(params).promise();
+    await docClient.send(command);
     console.info('successfully saved id and connectionId');
   } catch (e) {
     console.error('failed to save ids:', e);
