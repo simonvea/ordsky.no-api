@@ -1,3 +1,5 @@
 node_modules
 .aws-sam
 src/**/*.js
+ordsjekk
+.DS_store
