@@ -206,6 +206,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        OutExtension:
+          - .js=.mjs
+        Target: 'es2020'
         EntryPoints:
           - index.ts
         External:
@@ -241,6 +245,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        OutExtension:
+          - .js=.mjs
+        Target: 'es2020'
         EntryPoints:
           - index.ts
         External:
@@ -270,6 +278,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        OutExtension:
+          - .js=.mjs
+        Target: 'es2020'
         EntryPoints:
           - index.ts
         External:
@@ -304,6 +316,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: esm
+        OutExtension:
+          - .js=.mjs
+        Target: 'es2020'
         EntryPoints:
           - index.ts
         External:

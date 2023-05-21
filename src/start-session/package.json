@@ -3,6 +3,7 @@
   "description": "Starts a wordcloud session",
   "version": "0.0.2",
   "private": true,
+  "type": "module",
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.335.0",
     "@aws-sdk/lib-dynamodb": "^3.335.0",

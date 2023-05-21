@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "esbuild index.ts --platform=node --outfile=index.js --minify"
@@ -12,5 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "esbuild": "^0.17.19"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4"
   }
 }
