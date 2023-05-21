@@ -1,43 +1,54 @@
 import AWSXRay from 'aws-xray-sdk';
-import AWSSDK from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  GetCommand,
+} from '@aws-sdk/lib-dynamodb';
+import {
+  ApiGatewayManagementApiClient,
+  PostToConnectionCommand,
+} from '@aws-sdk/client-apigatewaymanagementapi';
 
-AWSSDK.config.logger = console;
+const dynamoDB = AWSXRay.captureAWSv3Client(
+  new DynamoDBClient({ logger: console })
+);
 
-const AWS = AWSXRay.captureAWS(AWSSDK);
+const docClient = DynamoDBDocumentClient.from(dynamoDB);
+
 const tableName = process.env.SESSION_TABLE!;
 const endpoint = process.env.ENDPOINT;
 
-const docClient = new AWS.DynamoDB.DocumentClient();
-const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+const apigwManagementApi = new ApiGatewayManagementApiClient({
   apiVersion: '2018-11-29',
   endpoint,
 });
 
 export async function removeConnectionId(connectionId: string, key: string) {
-  return docClient
-    .update({
-      TableName: tableName,
-      Key: { id: key },
-      UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
-      ExpressionAttributeValues: {
-        ':id': docClient.createSet([connectionId]),
-      },
-      ReturnValues: 'NONE',
-    })
-    .promise();
+  const command = new UpdateCommand({
+    TableName: tableName,
+    Key: { id: key },
+    UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
+    ExpressionAttributeValues: {
+      ':id': new Set(connectionId),
+    },
+    ReturnValues: 'NONE',
+  });
+
+  return docClient.send(command);
 }
 
 export async function getConnections(id: string): Promise<string[]> {
-  const params = {
+  const command = new GetCommand({
     TableName: tableName,
     Key: {
       id,
     },
     AttributesToGet: ['connectionIds'],
     ReturnConsumedCapacity: 'TOTAL',
-  };
+  });
 
-  const result = await docClient.get(params).promise();
+  const result = await docClient.send(command);
 
   console.info(
     'Successfully retrieved connectionIds, consumed capacity:',
@@ -58,22 +69,21 @@ type SaveToConnectionsArg = {
   onStaleConnection?: (staleConnection: string) => Promise<void>;
 };
 
-// TODO: Get endpoint from env?
 export async function sendToConnections({
   message,
   connections,
   onStaleConnection = (staleConnection: string) => Promise.resolve(),
 }: SaveToConnectionsArg) {
   const messages = connections.map(async (connectionId) => {
+    const command = new PostToConnectionCommand({
+      ConnectionId: connectionId,
+      Data: JSON.stringify(message) as unknown as Uint8Array, // bypass type check, string is valid according to docs
+    });
+
     try {
-      await apigwManagementApi
-        .postToConnection({
-          ConnectionId: connectionId,
-          Data: JSON.stringify(message),
-        })
-        .promise();
+      await apigwManagementApi.send(command);
       console.info('posted to ', connectionId);
-    } catch (e) {
+    } catch (e: any & { statusCode: number }) {
       if (e.statusCode === 410) {
         console.log(`Found stale connection.`);
         await onStaleConnection(connectionId);

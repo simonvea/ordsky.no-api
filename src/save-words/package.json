@@ -7,6 +7,9 @@
     "@aws-sdk/client-dynamodb": "^3.335.0",
     "@aws-sdk/lib-dynamodb": "^3.335.0",
     "aws-xray-sdk": "^3.5.0",
-    "gw-helpers": "file:../common/nodejs/gw-helpers"
+    "gw-helpers": "file:../common/gw-helpers"
+  },
+  "dependencies": {
+    "esbuild": "^0.17.19"
   }
 }

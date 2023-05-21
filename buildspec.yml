@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 12
+      nodejs: 18
     commands:
       # Upgrading SAM CLI to latest version
       - pip3 install --upgrade aws-sam-cli
@@ -19,7 +19,7 @@ phases:
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
-      - sam build
+      - sam build -parallel
   post_build:
     commands:
       - sam package --s3-bucket $PACKAGE_BUCKET --output-template-file packaged.yaml

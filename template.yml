@@ -15,7 +15,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: nodejs12.x
+    Runtime: nodejs18.x
     Handler: index.handler
     Tracing: Active
     Layers:
@@ -201,6 +201,17 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
+      Architectures:
+        - arm64
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.ts
+        External:
+          - 'aws-xray-sdk'
+          - '@aws-sdk'
+
   StartSessionPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -216,6 +227,8 @@ Resources:
       CodeUri: src/save-words/
       Timeout: 2
       Description: Save words to a DynamoDB table.
+      Architectures:
+        - arm64
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -225,6 +238,15 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.ts
+        External:
+          - 'gw-helpers'
+          - 'aws-xray-sdk'
+          - '@aws-sdk'
   SaveWordsPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -240,9 +262,19 @@ Resources:
       CodeUri: src/get-words/
       Timeout: 1
       Description: Get words from table.
+      Architectures:
+        - arm64
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.ts
+        External:
+          - 'aws-xray-sdk'
+          - '@aws-sdk'
   GetWordsPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -258,6 +290,8 @@ Resources:
       CodeUri: src/handle-cloud/
       Timeout: 3
       Description: Sends cloud to connections and saves cloud to DynamoDB table.
+      Architectures:
+        - arm64
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrdskySessionTable
@@ -267,6 +301,15 @@ Resources:
                 - 'execute-api:ManageConnections'
               Resource:
                 - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OrdskyWebsocket}/*'
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.ts
+        External:
+          - 'gw-helpers'
+          - 'aws-xray-sdk'
+          - '@aws-sdk'
 
   HandleCloudPermission:
     Type: AWS::Lambda::Permission
@@ -284,7 +327,7 @@ Resources:
       Description: Dependencies for ordsky session api
       ContentUri: src/common/
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs18.x
       LicenseInfo: 'MIT'
       RetentionPolicy: Delete #Could also be Retain if I want to keep every version..
     Metadata:
@@ -298,18 +341,6 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
-        - AttributeName: connectionIds
-          AttributeType: SS
-        - AttributeName: words
-          AttributeType: L
-        - AttributeName: numberOfEntries
-          AttributeType: N
-        - AttributeName: cloud
-          AttributeType: L
-        - AttributeName: expdate
-          AttributeType: N
-        - AttributeName: wordCount
-          AttributeType: L
       KeySchema:
         - AttributeName: id
           KeyType: HASH
