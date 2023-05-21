@@ -12,7 +12,7 @@ const docClient = DynamoDBDocumentClient.from(dynamodb);
 
 const tableName = process.env.SESSION_TABLE as string;
 
-exports.handler = async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   // All log statements are written to CloudWatch
   console.info('received:', event);
 
