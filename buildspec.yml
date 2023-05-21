@@ -19,7 +19,7 @@ phases:
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
-      - sam build -parallel
+      - sam build --parallel
   post_build:
     commands:
       - sam package --s3-bucket $PACKAGE_BUCKET --output-template-file packaged.yaml
