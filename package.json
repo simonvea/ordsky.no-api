@@ -5,12 +5,13 @@
   "private": true,
   "devDependencies": {
     "@types/aws-lambda": "^8.10.115",
+    "@types/node": "^20.2.1",
     "typescript": "^5.0.4"
   },
   "scripts": {
     "build": "tsc",
     "tsc": "tsc",
     "check": "tsc --noEmit",
-    "install:all": "cd src && for D in */; do npm i; done"
+    "install:all": "cd src && for D in */; do npm ci; done"
   }
 }

@@ -4,10 +4,7 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      # Upgrading SAM CLI to latest version
-      - pip3 install --upgrade aws-sam-cli
-      - sam --version
-      - npm install
+      - npm ci
       - npm run install:all
   pre_build:
     commands:
