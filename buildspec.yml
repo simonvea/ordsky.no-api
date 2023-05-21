@@ -8,11 +8,10 @@ phases:
       - pip3 install --upgrade aws-sam-cli
       - sam --version
       - npm install
+      - npm run install:all
   pre_build:
     commands:
       - npm run check
-      # Discover and run unit tests in the '__tests__' directory
-      # - npm run test
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
