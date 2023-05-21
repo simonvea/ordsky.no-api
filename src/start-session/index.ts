@@ -34,7 +34,7 @@ export const handler = async (event: APIGatewayEvent) => {
       id: id.toString(),
       numberOfEntries: 0,
       words: [],
-      connectionIds: new Set(connectionId as string),
+      connectionIds: new Set([connectionId as string]),
       expdate: Math.floor(new Date().getTime() / 1000 + 60 * 60 * 2), // Expires in two hours
     },
     ReturnConsumedCapacity: 'TOTAL',

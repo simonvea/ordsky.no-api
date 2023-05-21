@@ -30,7 +30,7 @@ export async function removeConnectionId(connectionId: string, key: string) {
     Key: { id: key },
     UpdateExpression: 'DELETE connectionIds :id', //DELETE requires that it is a set (which it is:D)
     ExpressionAttributeValues: {
-      ':id': new Set(connectionId),
+      ':id': new Set([connectionId]),
     },
     ReturnValues: 'NONE',
   });
@@ -56,11 +56,11 @@ export async function getConnections(id: string): Promise<string[]> {
   );
 
   const { connectionIds } = result.Item as {
-    connectionIds: { values: string[] };
+    connectionIds: Set<string>;
   };
 
-  // Connection IDs is a dynamoDB Set, we want the values..
-  return connectionIds.values;
+  // Connection IDs is a Set, we want the values..
+  return Array.from(connectionIds);
 }
 
 type SaveToConnectionsArg = {

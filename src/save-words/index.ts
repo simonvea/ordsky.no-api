@@ -37,7 +37,7 @@ export const handler = async (event: APIGatewayEvent) => {
   }
 
   const { numberOfEntries, connectionIds } = result;
-  const connections = connectionIds.values;
+  const connections = Array.from(connectionIds);
 
   const message = {
     type: 'WORDS_ADDED',

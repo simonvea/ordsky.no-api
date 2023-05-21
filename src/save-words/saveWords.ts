@@ -30,7 +30,7 @@ export async function saveWordsAndConnectionId(
     ExpressionAttributeValues: {
       ':vals': words,
       ':ne': 1,
-      ':id': new Set(connectionId),
+      ':id': new Set([connectionId]),
     },
     ReturnConsumedCapacity: 'TOTAL',
   });
@@ -45,6 +45,6 @@ export async function saveWordsAndConnectionId(
   return result.Attributes as {
     words: string[];
     numberOfEntries: number;
-    connectionIds: { values: string[] };
+    connectionIds: Set<string>;
   };
 }
