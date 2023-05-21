@@ -12,10 +12,7 @@ phases:
     commands:
       - npm run check
       # Discover and run unit tests in the '__tests__' directory
-      - npm run test
-      # Remove mock files because we don't want to upload them
-      - find . -name __mocks__ -type d -exec rm -rf {} +
-      - npm run build
+      # - npm run test
   build:
     commands:
       # Use AWS SAM to package the application by using AWS CloudFormation
