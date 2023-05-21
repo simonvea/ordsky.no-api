@@ -1,0 +1,14 @@
+{
+  "name": "rejoin-session",
+  "description": "Rejoins a wordcloud session",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.335.0",
+    "@aws-sdk/lib-dynamodb": "^3.335.0",
+    "aws-xray-sdk": "^3.5.0",
+    "esbuild": "^0.17.19",
+    "gw-helpers": "file:../common/gw-helpers"
+  }
+}
