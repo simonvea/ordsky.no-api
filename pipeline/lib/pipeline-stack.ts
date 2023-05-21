@@ -1,12 +1,15 @@
-import * as cdk from '@aws-cdk/core';
-import s3 = require('@aws-cdk/aws-s3');
-import codecommit = require('@aws-cdk/aws-codecommit');
-import codepipeline = require('@aws-cdk/aws-codepipeline');
-import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
-import codebuild = require('@aws-cdk/aws-codebuild');
+import { Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import {
+  aws_s3 as s3,
+  aws_codecommit as codecommit,
+  aws_codepipeline as codepipeline,
+  aws_codepipeline_actions as codepipeline_actions,
+  aws_codebuild as codebuild,
+} from 'aws-cdk-lib';
 
-export class PipelineStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+export class PipelineStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     const artifactsBucket = new s3.Bucket(this, 'ArtifactsBucket');
@@ -44,7 +47,10 @@ export class PipelineStack extends cdk.Stack {
 
     // Declare a new CodeBuild project
     const buildProject = new codebuild.PipelineProject(this, 'Build', {
-      environment: { buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_2 },
+      environment: {
+        buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
+        computeType: codebuild.ComputeType.SMALL,
+      },
       environmentVariables: {
         PACKAGE_BUCKET: {
           value: artifactsBucket.bucketName,
