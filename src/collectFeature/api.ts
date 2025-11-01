@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { getSession } from "./db/index.ts";
+import { addWords, createSession, getSession } from "./db/index.ts";
 import { dbSessionToSessionResponse } from "./utils.ts";
+import type { DbSession, SessionResponse } from "./types.ts";
 
 export const collectRouter = Router();
 
@@ -10,6 +11,27 @@ collectRouter.get("/:id", ({ params }, res) => {
   const session = getSession(params.id);
 
   if (!session) return res.status(404).send("Session not found.");
+
+  const response = dbSessionToSessionResponse(session);
+
+  res.send(response);
+});
+
+collectRouter.put("/:id/words", ({ params, body }, res) => {
+  const id = params.id;
+  if (!id || id.length !== 5) return res.status(404).send("Unknown session");
+
+  if (!body || !Array.isArray(body)) {
+    return res.status(400).send("Missing words");
+  }
+  const existing = getSession(id);
+  let session: DbSession;
+
+  if (!!existing) {
+    session = addWords(id, body);
+  } else {
+    session = createSession(id, body);
+  }
 
   const response = dbSessionToSessionResponse(session);
 

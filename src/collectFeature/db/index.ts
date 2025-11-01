@@ -1,3 +1,4 @@
+import assert from "assert";
 import type { DbSession } from "../types.ts";
 import db from "./database.ts";
 
@@ -7,4 +8,34 @@ export const getSession = (id: string): DbSession | undefined => {
   return sql.get`SELECT * FROM sessions WHERE id = ${id}` as
     | DbSession
     | undefined;
+};
+
+export const createSession = (id: string, words: string[]): DbSession => {
+  assert(id);
+  assert(words);
+
+  const wordsToAdd = JSON.stringify(words);
+
+  const session =
+    sql.get`INSERT INTO sessions (session_id, words, entries_count) VALUES (${id}, ${wordsToAdd}, ${1}) RETURNING *` as DbSession;
+
+  return session!;
+};
+
+export const addWords = (id: string, words: string[]) => {
+  assert(id);
+  assert(words);
+
+  const session = getSession(id);
+
+  if (!session) return;
+
+  const existingWords = JSON.parse(session.words);
+  const newList = [...existingWords, ...words];
+  const json = JSON.stringify(newList);
+
+  const newSession =
+    sql.get`UPDATE sessions SET words = ${json}, entries_count = entries_count + 1 WHERE session_id = ${id} RETURNING *` as DbSession;
+
+  return newSession!;
 };
