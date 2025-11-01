@@ -1,4 +1,4 @@
-import { SessionData } from "./types";
+import type { SessionData } from "./types.ts";
 
 const db: Map<string, SessionData> = new Map();
 

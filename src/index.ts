@@ -1,20 +1,16 @@
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import express from "express";
 import { createServer } from "node:http";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { ServerToClientEvents, ClientToServerEvents } from "./types";
-import db from "./db";
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+  SessionData,
+} from "./types.ts";
+import db from "./db.ts";
 
 const app = express();
 const server = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server);
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-app.get("/", (req, res) => {
-  res.sendFile(join(__dirname, "index.html"));
-});
 
 app.get("/health", (_, res) => res.send("ok"));
 
@@ -40,7 +36,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    let res;
+    let res: SessionData;
     try {
       res = db.addWords({ id, words });
 
