@@ -39,3 +39,14 @@ export const addWords = (id: string, words: string[]) => {
 
   return newSession!;
 };
+
+export const addCloud = (id: string, cloud: any[]) => {
+  assert(id);
+  assert(cloud);
+  const json = JSON.stringify(cloud);
+
+  const session =
+    sql.get`UPDATE sessions SET cloud = ${json} WHERE session_id = ${id} RETURNING *` as DbSession;
+
+  return session;
+};

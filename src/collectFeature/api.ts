@@ -37,3 +37,20 @@ collectRouter.put("/:id/words", ({ params, body }, res) => {
 
   res.send(response);
 });
+
+collectRouter.put("/:id/cloud", ({ params, body }, res) => {
+  const id = params.id;
+  if (!id || id.length !== 5) return res.status(404).send("Unknown session");
+
+  if (!body || !Array.isArray(body)) {
+    return res.status(400).send("Missing cloud");
+  }
+
+  const session = getSession(id);
+
+  if (!session) return res.status(404).send("Session not found.");
+
+  const result = dbSessionToSessionResponse(session);
+
+  res.send(result);
+});
