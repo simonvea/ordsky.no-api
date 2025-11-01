@@ -16,6 +16,8 @@ app.get("/", (req, res) => {
   res.sendFile(join(__dirname, "index.html"));
 });
 
+app.get("/health", (_, res) => res.send("ok"));
+
 io.on("connection", (socket) => {
   socket.on("startsession", ({ id }) => {
     if (!id)
@@ -26,6 +28,40 @@ io.on("connection", (socket) => {
     socket.join(id);
 
     console.info("Successfully started session with id", id);
+  });
+
+  socket.on("savewords", async ({ id, words }) => {
+    if (!id || !words) {
+      console.log(
+        "Missing id or words when attempting to add words",
+        JSON.stringify({ id, words }),
+      );
+      socket.emit("ERROR", { type: "ERROR", message: "Missing id or words!" });
+      return;
+    }
+
+    let res;
+    try {
+      res = db.addWords({ id, words });
+
+      console.info("saved words to id", id);
+    } catch (e) {
+      console.error("Failed to save words to db for id", id, e.message);
+      socket.emit("ERROR", { type: "ERROR", message: "Failed to save words" });
+      return;
+    }
+
+    io.to(id).emit("WORDS_ADDED", {
+      type: "WORDS_ADDED",
+      numberOfEntries: res.numberOfEntries,
+      newWordsCount: words.length,
+      connectionCount: (await io.in(id).fetchSockets()).length,
+    });
+
+    console.info(
+      "Successfully sent numberOfEntries to connections",
+      res.numberOfEntries,
+    );
   });
 
   socket.on("disconnect", () => {
