@@ -91,6 +91,24 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("savecloud", ({ id, cloud, wordCount }) => {
+    if (!id || !cloud) return;
+
+    io.to(id).emit("CLOUD_CREATED", {
+      type: "CLOUD_CREATED",
+      cloud,
+      wordCount,
+    });
+
+    console.info("sendt cloud to connections.");
+
+    const res = db.addCloud({ id, cloud, wordCount });
+
+    if (!res) {
+      socket.emit("ERROR", { type: "ERROR", message: "Non existing session!" });
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });

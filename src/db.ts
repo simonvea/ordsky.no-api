@@ -6,6 +6,11 @@ export interface Db {
   createSession: (id: string) => void;
   addWords: ({}: { id: string; words: string[] }) => SessionData;
   getSession: (id: string) => SessionData | undefined;
+  addCloud: ({}: {
+    id: string;
+    cloud: any;
+    wordCount: number;
+  }) => SessionData | undefined;
 }
 
 export default {
@@ -32,5 +37,20 @@ export default {
   },
   getSession: (id) => {
     return db.get(id);
+  },
+  addCloud: ({ id, cloud, wordCount }) => {
+    const currentSession = db.get(id);
+
+    if (!currentSession) return;
+
+    const updated: SessionData = {
+      ...currentSession,
+      cloud,
+      wordCount,
+    };
+
+    db.set(id, updated);
+
+    return updated;
   },
 } satisfies Db;
