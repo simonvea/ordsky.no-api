@@ -1,6 +1,0 @@
-{
-  "requestContext": {
-    "connectionId": "anId2"
-  },
-  "body": "{ \"action\": \"startsession\", \"id\": \"12345\"}"
-}
