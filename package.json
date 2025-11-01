@@ -5,17 +5,15 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.115",
-    "@types/node": "^20.2.1",
-    "typescript": "^5.0.4",
+    "@types/node": "^24.9.2",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.6"
   },
   "scripts": {
     "dev": "node --watch src/index.ts",
     "build": "tsc",
     "tsc": "tsc",
-    "check": "tsc --noEmit",
-    "install:all": "cd src && for D in */; do npm ci; done"
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "express": "^5.1.0",
