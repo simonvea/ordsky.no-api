@@ -6,6 +6,7 @@ import type {
   ServerToClientEvents,
 } from "./collabFeature/types.ts";
 import app from "./app.ts";
+import { runMigrations } from "./collectFeature/db/migrate.ts";
 
 const server = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server);
@@ -17,6 +18,13 @@ const onConnection = (
 };
 
 io.on("connection", onConnection);
+
+try {
+  runMigrations();
+} catch (error) {
+  console.error("Failed to run migrations:", error);
+  process.exit(1);
+}
 
 server.listen(3000, () => {
   console.log("server running at http://localhost:3000");

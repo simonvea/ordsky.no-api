@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import { BASE_PATH, collabRouter } from "./collabFeature/api.ts";
+import { COLLECT_BASE_URL, collectRouter } from "./collectFeature/api.ts";
 
 const app = express();
 
@@ -17,9 +18,8 @@ if (process.env.NODE_ENV === "production") {
 
 // routes
 app.use(BASE_PATH, collabRouter);
+app.use(COLLECT_BASE_URL, collectRouter);
 
 app.get("/health", (_, res) => res.send("ok"));
-
-app.get("/felles/:id", ({ params }, res) => {});
 
 export default app;
