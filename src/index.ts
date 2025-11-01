@@ -14,6 +14,22 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server);
 
 app.get("/health", (_, res) => res.send("ok"));
 
+app.get("/collaborative/:id", ({ params }, res) => {
+  const session = db.getSession(params.id);
+
+  if (!session) return res.status(404).send("Not found.");
+
+  res.send(session);
+});
+
+app.get("/collaborative/:id/words", ({ params }, res) => {
+  const session = db.getSession(params.id);
+
+  if (!session) return res.status(404).send("Not found.");
+
+  res.send({ id: session.id, words: session.words });
+});
+
 io.on("connection", (socket) => {
   socket.on("startsession", ({ id }) => {
     if (!id)
