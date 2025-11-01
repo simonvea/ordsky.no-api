@@ -28,7 +28,7 @@ export const addWords = (id: string, words: string[]) => {
 
   const session = getSession(id);
 
-  if (!session) return;
+  if (!session) throw new Error("Failed to find session to update!");
 
   const existingWords = JSON.parse(session.words);
   const newList = [...existingWords, ...words];
@@ -47,6 +47,23 @@ export const addCloud = (id: string, cloud: any[]) => {
 
   const session =
     sql.get`UPDATE sessions SET cloud = ${json} WHERE session_id = ${id} RETURNING *` as DbSession;
+
+  return session;
+};
+
+export const addCloudAndWordCount = (
+  id: string,
+  cloud: any[],
+  wordCount: any[],
+): DbSession => {
+  assert(cloud);
+  assert(wordCount);
+
+  const cloudJson = JSON.stringify(cloud);
+  const wordCountJson = JSON.stringify(wordCount);
+
+  const session =
+    sql.get`UPDATE sessions set cloud = ${cloudJson}, word_count = ${wordCountJson} WHERE session_id = ${id} RETURNING *` as DbSession;
 
   return session;
 };

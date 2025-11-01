@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { addWords, createSession, getSession } from "./db/index.ts";
+import {
+  addCloudAndWordCount,
+  addWords,
+  createSession,
+  getSession,
+} from "./db/index.ts";
 import { dbSessionToSessionResponse } from "./utils.ts";
 import type { DbSession, SessionResponse } from "./types.ts";
 
@@ -53,4 +58,30 @@ collectRouter.put("/:id/cloud", ({ params, body }, res) => {
   const result = dbSessionToSessionResponse(session);
 
   res.send(result);
+});
+
+export type WordCount = Array<{
+  text: string;
+  count: number;
+}>;
+
+collectRouter.patch("/:id", ({ params, body }, res) => {
+  const id = params.id;
+
+  if (!id || id.length !== 5) return res.status(404).send("Unknown session");
+
+  const { cloud, wordCount } = body;
+
+  if (!cloud || !wordCount)
+    return res.status(400).send("Need both cloud and wordCount");
+
+  const session = getSession(id);
+
+  if (!session) return res.status(404).send("Session not found.");
+
+  const newSession = addCloudAndWordCount(id, cloud, wordCount);
+
+  const response = dbSessionToSessionResponse(newSession);
+
+  res.send(response);
 });
