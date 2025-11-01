@@ -46,7 +46,11 @@ io.on("connection", (socket) => {
 
       console.info("saved words to id", id);
     } catch (e) {
-      console.error("Failed to save words to db for id", id, e.message);
+      console.error(
+        "Failed to save words to db for id",
+        id,
+        (e as Error).message,
+      );
       socket.emit("ERROR", { type: "ERROR", message: "Failed to save words" });
       return;
     }
@@ -64,7 +68,7 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.on("rejoinsession", async ({ id }) => {
+  socket.on("joinsession", async ({ id }) => {
     if (!id) {
       console.log("Attempt to rejoin session without id");
       socket.emit("ERROR", { type: "ERROR", message: "Missing id!" });
@@ -81,8 +85,8 @@ io.on("connection", (socket) => {
 
     socket.join(id);
 
-    socket.emit("SESSION_REJOINED", {
-      type: "SESSION_REJOINED",
+    socket.emit("SESSION_JOINED", {
+      type: "SESSION_JOINED",
       sessionId: id,
       message: "Successfully rejoined session.",
       numberOfEntries: session.numberOfEntries,

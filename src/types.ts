@@ -5,7 +5,7 @@ export interface ServerToClientEvents {
   SESSION_WORDS: (response: SessionWordsResponse) => void;
   ERROR: (response: ErrorResponse) => void;
   SESSION_STARTED: (response: SessionWordsResponse) => void;
-  SESSION_REJOINED: (response: SessionRejoinedResponse) => void;
+  SESSION_JOINED: (response: SessionJoinedResponse) => void;
   USER_JOINED: (response: UserJoinedResponse) => void;
 }
 
@@ -14,7 +14,7 @@ export interface ClientToServerEvents {
   savewords: (message: { id: string; words: string[] }) => void;
   getwords: (message: { id: string }) => void;
   savecloud: (message: { id: string; cloud: any; wordCount: number }) => void;
-  rejoinsession: (message: { id: string }) => void;
+  joinsession: (message: { id: string }) => void;
 }
 
 // Response message types
@@ -52,8 +52,8 @@ export interface SessionStartedResponse {
   connectionCount: number;
 }
 
-export interface SessionRejoinedResponse {
-  type: "SESSION_REJOINED";
+export interface SessionJoinedResponse {
+  type: "SESSION_JOINED";
   message: string;
   sessionId: string;
   numberOfEntries: number;
@@ -77,4 +77,3 @@ export interface SessionData {
   wordCount?: number;
   createdAt: Date;
 }
-
