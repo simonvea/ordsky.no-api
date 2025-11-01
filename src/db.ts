@@ -5,6 +5,7 @@ const db: Map<string, SessionData> = new Map();
 export interface Db {
   createSession: (id: string) => void;
   addWords: ({}: { id: string; words: string[] }) => SessionData;
+  getSession: (id: string) => SessionData | undefined;
 }
 
 export default {
@@ -28,5 +29,8 @@ export default {
     };
     db.set(id, updated);
     return updated;
+  },
+  getSession: (id) => {
+    return db.get(id);
   },
 } satisfies Db;

@@ -64,6 +64,33 @@ io.on("connection", (socket) => {
     );
   });
 
+  socket.on("rejoinsession", async ({ id }) => {
+    if (!id) {
+      console.log("Attempt to rejoin session without id");
+      socket.emit("ERROR", { type: "ERROR", message: "Missing id!" });
+      return;
+    }
+
+    const session = db.getSession(id);
+
+    if (!session) {
+      console.log("Attempt to join non-existing session");
+      socket.emit("ERROR", { type: "ERROR", message: "Invalid session" });
+      return;
+    }
+
+    socket.join(id);
+
+    socket.emit("SESSION_REJOINED", {
+      type: "SESSION_REJOINED",
+      sessionId: id,
+      message: "Successfully rejoined session.",
+      numberOfEntries: session.numberOfEntries,
+      connectionCount: (await io.in(id).fetchSockets()).length,
+      words: session.words,
+    });
+  });
+
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });
