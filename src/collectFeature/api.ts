@@ -6,7 +6,7 @@ import {
   getSession,
 } from "./db/index.ts";
 import { dbSessionToSessionResponse } from "./utils.ts";
-import type { DbSession, SessionResponse } from "./types.ts";
+import type { DbSession } from "./types.ts";
 
 export const collectRouter = Router();
 

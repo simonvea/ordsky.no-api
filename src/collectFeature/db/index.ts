@@ -5,7 +5,7 @@ import db from "./database.ts";
 const sql = db.createTagStore();
 
 export const getSession = (id: string): DbSession | undefined => {
-  return sql.get`SELECT * FROM sessions WHERE id = ${id}` as
+  return sql.get`SELECT * FROM sessions WHERE session_id = ${id}` as
     | DbSession
     | undefined;
 };
@@ -35,7 +35,7 @@ export const addWords = (id: string, words: string[]) => {
   const json = JSON.stringify(newList);
 
   const newSession =
-    sql.get`UPDATE sessions SET words = ${json}, entries_count = entries_count + 1 WHERE session_id = ${id} RETURNING *` as DbSession;
+    sql.get`UPDATE sessions SET words = ${json}, entries_count = entries_count + 1, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
 
   return newSession!;
 };
@@ -46,7 +46,7 @@ export const addCloud = (id: string, cloud: any[]) => {
   const json = JSON.stringify(cloud);
 
   const session =
-    sql.get`UPDATE sessions SET cloud = ${json} WHERE session_id = ${id} RETURNING *` as DbSession;
+    sql.get`UPDATE sessions SET cloud = ${json}, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
 
   return session;
 };
@@ -63,7 +63,7 @@ export const addCloudAndWordCount = (
   const wordCountJson = JSON.stringify(wordCount);
 
   const session =
-    sql.get`UPDATE sessions set cloud = ${cloudJson}, word_count = ${wordCountJson} WHERE session_id = ${id} RETURNING *` as DbSession;
+    sql.get`UPDATE sessions set cloud = ${cloudJson}, word_count = ${wordCountJson}, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
 
   return session;
 };
