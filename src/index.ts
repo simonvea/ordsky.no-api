@@ -7,6 +7,7 @@ import type {
 } from "./collabFeature/types.ts";
 import app from "./app.ts";
 import { runMigrations } from "./db/migrate.ts";
+import { startCleanupJob } from "./collabFeature/cron.ts";
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
@@ -31,6 +32,8 @@ try {
   console.error("Failed to run migrations:", error);
   process.exit(1);
 }
+
+startCleanupJob();
 
 const PORT = process.env.PORT || 3000;
 

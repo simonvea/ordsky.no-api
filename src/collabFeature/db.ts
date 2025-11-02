@@ -14,6 +14,7 @@ export interface Db {
     cloud: any;
     wordCount: number;
   }) => SessionResponse | undefined;
+  removeStaleSessions: () => number;
 }
 
 export default {
@@ -72,5 +73,13 @@ export default {
       sql.get`UPDATE live_sessions SET cloud = ${cloudJson}, word_count = ${wordCountJson}, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
 
     return dbSessionToSessionResponse(newSession);
+  },
+  removeStaleSessions: () => {
+    const result = sql.run`
+      DELETE FROM live_sessions
+      WHERE cloud IS NULL
+      AND updated_at < datetime('now', '-1 day')
+    `;
+    return Number(result.changes);
   },
 } satisfies Db;
