@@ -6,7 +6,7 @@ import type {
   ServerToClientEvents,
 } from "./collabFeature/types.ts";
 import app from "./app.ts";
-import { runMigrations } from "./collectFeature/db/migrate.ts";
+import { runMigrations } from "./db/migrate.ts";
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 

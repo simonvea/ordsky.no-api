@@ -1,6 +1,6 @@
 import assert from "assert";
-import type { DbSession } from "../types.ts";
-import db from "./database.ts";
+import type { DbSession } from "../db/types.ts";
+import db from "../db/database.ts";
 
 const sql = db.createTagStore();
 

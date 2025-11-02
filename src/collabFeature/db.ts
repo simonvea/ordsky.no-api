@@ -1,56 +1,76 @@
-import type { SessionData } from "./types.ts";
+import assert from "node:assert";
+import type { DbSession, SessionResponse } from "../db/types.ts";
+import db from "../db/database.ts";
+import { dbSessionToSessionResponse } from "../db/utils.ts";
 
-const db: Map<string, SessionData> = new Map();
+const sql = db.createTagStore();
 
 export interface Db {
   createSession: (id: string) => void;
-  addWords: ({}: { id: string; words: string[] }) => SessionData;
-  getSession: (id: string) => SessionData | undefined;
+  addWords: ({}: { id: string; words: string[] }) => SessionResponse;
+  getSession: (id: string) => SessionResponse | undefined;
   addCloud: ({}: {
     id: string;
     cloud: any;
     wordCount: number;
-  }) => SessionData | undefined;
+  }) => SessionResponse | undefined;
 }
 
 export default {
-  createSession: (id) =>
-    db.set(id, { id, numberOfEntries: 0, words: [], createdAt: new Date() }),
+  createSession: (id) => {
+    sql.run`INSERT INTO live_sessions (session_id, entries_count, words) VALUES (${id}, ${0}, ${"[]"})`;
+  },
   addWords: ({ id, words }) => {
-    let current = db.get(id);
+    assert(id);
+    assert(words);
+    const session =
+      sql.get`SELECT * FROM live_sessions WHERE session_id = ${id}` as DbSession;
 
-    if (!current) {
+    if (!session) {
       console.error(
         "Attempt to add words to non-existing session with id " + id,
       );
       throw new Error("Session does not exist");
     }
 
-    const updated = {
-      ...current,
-      numberOfEntries: (current.numberOfEntries += 1),
-      words: [...current.words, ...words],
-      wordCount: current.words.length + words.length,
-    };
-    db.set(id, updated);
-    return updated;
+    const existingWords = JSON.parse(session.words);
+    const newList = [...existingWords, ...words];
+    const json = JSON.stringify(newList);
+
+    const newSession =
+      sql.get`UPDATE live_sessions SET words = ${json}, entries_count = entries_count + 1, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
+
+    return dbSessionToSessionResponse(newSession);
   },
   getSession: (id) => {
-    return db.get(id);
+    const rawData =
+      sql.get`SELECT * FROM live_sessions WHERE session_id = ${id}` as DbSession;
+
+    if (!rawData) return;
+
+    return dbSessionToSessionResponse(rawData);
   },
   addCloud: ({ id, cloud, wordCount }) => {
-    const currentSession = db.get(id);
+    assert(id);
+    assert(cloud);
+    assert(wordCount);
 
-    if (!currentSession) return;
+    const session =
+      sql.get`SELECT * FROM live_sessions WHERE session_id = ${id}` as DbSession;
 
-    const updated: SessionData = {
-      ...currentSession,
-      cloud,
-      wordCount,
-    };
+    if (!session) {
+      console.error(
+        "Attempt to add words to non-existing session with id " + id,
+      );
+      throw new Error("Session does not exist");
+    }
 
-    db.set(id, updated);
+    const cloudJson = JSON.stringify(cloud);
+    const wordCountJson = JSON.stringify(wordCount);
 
-    return updated;
+    const newSession =
+      sql.get`UPDATE live_sessions SET cloud = ${cloudJson}, word_count = ${wordCountJson}, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
+
+    return dbSessionToSessionResponse(newSession);
   },
 } satisfies Db;

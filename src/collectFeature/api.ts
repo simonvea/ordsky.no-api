@@ -4,9 +4,9 @@ import {
   addWords,
   createSession,
   getSession,
-} from "./db/index.ts";
-import { dbSessionToSessionResponse } from "./utils.ts";
-import type { DbSession } from "./types.ts";
+} from "./db.ts";
+import { dbSessionToSessionResponse } from "../db/utils.ts";
+import type { DbSession } from "../db/types.ts";
 
 export const collectRouter = Router();
 

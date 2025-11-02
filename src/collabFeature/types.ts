@@ -67,13 +67,3 @@ export interface UserJoinedResponse {
   type: "USER_JOINED";
   connectionCount: number;
 }
-
-// Session data structure
-export interface SessionData {
-  id: string;
-  numberOfEntries: number;
-  words: string[];
-  cloud?: any;
-  wordCount?: number;
-  createdAt: Date;
-}

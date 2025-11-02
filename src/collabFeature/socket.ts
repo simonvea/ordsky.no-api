@@ -1,10 +1,7 @@
 import type { Server, Socket } from "socket.io";
-import type {
-  ServerToClientEvents,
-  ClientToServerEvents,
-  SessionData,
-} from "./types.ts";
+import type { ServerToClientEvents, ClientToServerEvents } from "./types.ts";
 import db from "./db.ts";
+import type { SessionResponse } from "../db/types.ts";
 
 export default (
   io: Server<ClientToServerEvents, ServerToClientEvents>,
@@ -34,7 +31,7 @@ export default (
       return;
     }
 
-    let res: SessionData;
+    let res: SessionResponse;
     try {
       res = db.addWords({ id, words });
     } catch (e) {
