@@ -12,6 +12,7 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 const server = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
+  path: "/ws",
   cors: { origin: ALLOWED_ORIGIN },
 });
 

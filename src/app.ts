@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
@@ -29,10 +29,13 @@ const corsHandler = cors({ origin: ALLOWED_ORIGIN });
 app.use(corsHandler);
 
 // routes
-app.options("/{*splat}", corsHandler);
-app.use(BASE_PATH, collabRouter);
-app.use(COLLECT_BASE_URL, collectRouter);
+const baseRouter = Router();
 
-app.get("/health", (_, res) => res.send("ok"));
+app.options("/{*splat}", corsHandler);
+baseRouter.use(BASE_PATH, collabRouter);
+baseRouter.use(COLLECT_BASE_URL, collectRouter);
+app.use("/api", baseRouter);
+
+app.get("/api/health", (_, res) => res.send("ok"));
 
 export default app;
