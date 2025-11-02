@@ -14,6 +14,7 @@ const server = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   path: "/ws",
   cors: { origin: ALLOWED_ORIGIN },
+  transports: ["websocket"],
 });
 
 const onConnection = (
@@ -34,5 +35,5 @@ try {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log("server running at http://localhost:3000");
+  console.log("server running at http://localhost:" + PORT);
 });
