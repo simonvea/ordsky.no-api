@@ -26,7 +26,7 @@ export default (
 
   socket.on("savewords", async ({ id, words }) => {
     if (!id || !words) {
-      console.log(
+      console.error(
         "Missing id or words when attempting to add words",
         JSON.stringify({ id, words }),
       );
@@ -37,8 +37,6 @@ export default (
     let res: SessionData;
     try {
       res = db.addWords({ id, words });
-
-      console.info("saved words to id", id);
     } catch (e) {
       console.error(
         "Failed to save words to db for id",
@@ -55,11 +53,6 @@ export default (
       newWordsCount: words.length,
       connectionCount: (await io.in(id).fetchSockets()).length,
     });
-
-    console.info(
-      "Successfully sent numberOfEntries to connections",
-      res.numberOfEntries,
-    );
   });
 
   socket.on("joinsession", async ({ id }) => {
@@ -98,16 +91,12 @@ export default (
       wordCount,
     });
 
-    console.info("sendt cloud to connections.");
-
     const res = db.addCloud({ id, cloud, wordCount });
 
     if (!res) {
       socket.emit("ERROR", { type: "ERROR", message: "Non existing session!" });
     }
-  });
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
+    console.info("Successfully completed session with id", id);
   });
 };
