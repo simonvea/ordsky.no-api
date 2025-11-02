@@ -1,18 +1,15 @@
-# ordsky-apiv2
+# ordsky-apiv3
 
-This is the backend Websocket API for ordsky.no
+This is the backend for ordsky.no
 
-## Deployment
+Previously run serverless on AWS and then Cloudflare, it now runs as a simple node application.
 
-In order to deploy write:
+It uses SQLite as database.
 
-```bash
-sam build
-sam deploy
-```
+### Environment Variables
 
-Changes to API gateway are not automatically deployed. One solution is to do the following
-
-```bash
-aws apigatewayv2 create-deployment --api-id ${id} --stage-name Prod --description "deployed from cli"
-```
+- `PORT` - Server port (default: 3000)
+- `DB_URL` - SQLite database path (default: in-memory)
+- `ALLOWED_ORIGIN` - CORS origin (default: \*)
+- `CORS_POLICY` - Cross-origin resource policy: 'same-site', 'same-origin', or 'cross-origin' (default: cross-origin)
+- `NODE_ENV` - Set to 'production' to enable helmet security and disable morgan logging

@@ -67,6 +67,7 @@ The WebSocket layer uses Socket.IO (`/ws` path, websocket-only transport):
 - TypeScript event types defined in `src/collabFeature/types.ts`
 
 Key events:
+
 - `startsession` - Creates a new collaborative session
 - `joinsession` - Joins existing session, receives current state
 - `savewords` - Adds words to session, broadcasts to all participants
@@ -82,29 +83,33 @@ Key events:
 - Uses `db.createTagStore()` for SQL tagged template literals
 
 **Two separate tables:**
+
 - `sessions` - For collectFeature (REST-only)
 - `live_sessions` - For collabFeature (WebSocket + REST)
 
 Both store JSON-serialized data in TEXT columns:
+
 - `words` - Array of submitted words
 - `cloud` - Generated word cloud data
 - `word_count` - Word frequency data
 
 **Database configuration:**
+
 - Set `DB_URL` environment variable (defaults to `./ordsky.sql`)
 - Falls back to `:memory:` if DB_URL not set
 
 ### Environment Variables
 
 - `PORT` - Server port (default: 3000)
-- `DB_URL` - SQLite database path (default: ./ordsky.sql)
-- `ALLOWED_ORIGIN` - CORS origin (default: *)
+- `DB_URL` - SQLite database path (default: in-memory)
+- `ALLOWED_ORIGIN` - CORS origin (default: \*)
 - `CORS_POLICY` - Cross-origin resource policy: 'same-site', 'same-origin', or 'cross-origin' (default: cross-origin)
 - `NODE_ENV` - Set to 'production' to enable helmet security and disable morgan logging
 
 ### TypeScript Configuration
 
 The project uses modern TypeScript with ESM:
+
 - Module system: `nodenext`
 - Import extensions required (`.ts` in imports, rewritten at runtime)
 - Type-only mode: `verbatimModuleSyntax: true`, `erasableSyntaxOnly: true`
@@ -113,17 +118,7 @@ The project uses modern TypeScript with ESM:
 
 ## Deployment
 
-Uses AWS SAM for deployment:
-
-```bash
-sam build
-sam deploy
-```
-
-For API Gateway changes:
-```bash
-aws apigatewayv2 create-deployment --api-id ${id} --stage-name Prod --description "deployed from cli"
-```
+Currently deployed manually with docker and docker compose from the ordsky.no repo.
 
 ## Adding Database Migrations
 
