@@ -8,8 +8,12 @@ import type {
 import app from "./app.ts";
 import { runMigrations } from "./collectFeature/db/migrate.ts";
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+
 const server = createServer(app);
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(server);
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
+  cors: { origin: ALLOWED_ORIGIN },
+});
 
 const onConnection = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -26,6 +30,8 @@ try {
   process.exit(1);
 }
 
-server.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
   console.log("server running at http://localhost:3000");
 });
