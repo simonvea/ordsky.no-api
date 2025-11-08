@@ -4,6 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { BASE_PATH, collabRouter } from "./collabFeature/api.ts";
 import { COLLECT_BASE_URL, collectRouter } from "./collectFeature/api.ts";
+import { register, metricsMiddleware } from "./metrics.ts";
 
 const app = express();
 
@@ -28,6 +29,9 @@ const corsHandler = cors({ origin: ALLOWED_ORIGIN });
 
 app.use(corsHandler);
 
+// Metrics middleware (track HTTP requests)
+app.use(metricsMiddleware);
+
 // routes
 const baseRouter = Router();
 
@@ -37,5 +41,15 @@ baseRouter.use(COLLECT_BASE_URL, collectRouter);
 app.use("/api", baseRouter);
 
 app.get("/api/health", (_, res) => res.send("ok"));
+
+// Metrics endpoint for Prometheus
+app.get("/metrics", async (_, res) => {
+  try {
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
 
 export default app;

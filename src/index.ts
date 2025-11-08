@@ -8,6 +8,7 @@ import type {
 import app from "./app.ts";
 import { runMigrations } from "./db/migrate.ts";
 import { startCleanupJob } from "./collabFeature/cron.ts";
+import { websocketConnections } from "./metrics.ts";
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
@@ -21,6 +22,13 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
 const onConnection = (
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 ) => {
+  // Track WebSocket connection
+  websocketConnections.labels('connect').inc();
+
+  socket.on('disconnect', () => {
+    websocketConnections.labels('disconnect').inc();
+  });
+
   registerCollabFeatureHandlers(io, socket);
 };
 

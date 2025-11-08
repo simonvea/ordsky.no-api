@@ -7,6 +7,7 @@ import {
 } from "./db.ts";
 import { dbSessionToSessionResponse } from "../db/utils.ts";
 import type { DbSession } from "../db/types.ts";
+import { wordCloudsCreated } from "../metrics.ts";
 
 export const collectRouter = Router();
 
@@ -80,6 +81,9 @@ collectRouter.patch("/:id", ({ params, body }, res) => {
   if (!session) return res.status(404).send("Session not found.");
 
   const newSession = addCloudAndWordCount(id, cloud, wordCount);
+
+  // Track word cloud creation
+  wordCloudsCreated.labels('collect').inc();
 
   const response = dbSessionToSessionResponse(newSession);
 

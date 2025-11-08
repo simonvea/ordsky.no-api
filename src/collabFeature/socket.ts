@@ -2,6 +2,7 @@ import type { Server, Socket } from "socket.io";
 import type { ServerToClientEvents, ClientToServerEvents } from "./types.ts";
 import db from "./db.ts";
 import type { SessionResponse } from "../db/types.ts";
+import { wordCloudsCreated } from "../metrics.ts";
 
 export default (
   io: Server<ClientToServerEvents, ServerToClientEvents>,
@@ -93,6 +94,9 @@ export default (
     if (!res) {
       socket.emit("ERROR", { type: "ERROR", message: "Non existing session!" });
     }
+
+    // Track word cloud creation
+    wordCloudsCreated.labels("collaborative").inc();
 
     console.info("Successfully completed session with id", id);
   });
