@@ -22,15 +22,17 @@ npm run build
 ## Running Tests
 
 ```bash
-# Run all tests
-npx vitest
+# Run all tests once
+npm test
 
 # Run tests in watch mode
-npx vitest --watch
+npx vitest
 
 # Run a specific test file
-npx vitest test/start-session.test.ts
+npx vitest src/collectFeature/api.test.ts
 ```
+
+Tests live next to the code as `src/<feature>/*.test.ts`. They start the Express app on a random port and call it with `fetch`. `vitest.config.ts` pins `DB_URL` to `:memory:`, so tests never touch a real database.
 
 ## Architecture
 
@@ -43,6 +45,7 @@ The application has two parallel feature implementations:
    - Uses `sessions` table
    - Synchronous operations
    - Located in `src/collectFeature/`
+   - A session has no status column: "cloud made" is `cloud IS NOT NULL`. `DELETE /:id/cloud` clears the cloud (keeping the words) to reopen collection
 
 2. **collabFeature** (`/api/collaborative/*`)
    - Hybrid REST + WebSocket implementation

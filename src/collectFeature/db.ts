@@ -67,3 +67,12 @@ export const addCloudAndWordCount = (
 
   return session;
 };
+
+export const clearCloud = (id: string): DbSession => {
+  assert(id);
+
+  const session =
+    sql.get`UPDATE sessions SET cloud = NULL, word_count = NULL, updated_at = date('now') WHERE session_id = ${id} RETURNING *` as DbSession;
+
+  return session;
+};

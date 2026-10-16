@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addCloudAndWordCount,
   addWords,
+  clearCloud,
   createSession,
   getSession,
 } from "./db.ts";
@@ -59,6 +60,20 @@ collectRouter.put("/:id/cloud", ({ params, body }, res) => {
   const result = dbSessionToSessionResponse(session);
 
   res.send(result);
+});
+
+// Reopens the collection: words and entry count stay, so the next cloud includes them.
+collectRouter.delete("/:id/cloud", ({ params }, res) => {
+  const id = params.id;
+  if (!id || id.length !== 5) return res.status(404).send("Unknown session");
+
+  const session = getSession(id);
+
+  if (!session) return res.status(404).send("Session not found.");
+
+  const response = dbSessionToSessionResponse(clearCloud(id));
+
+  res.send(response);
 });
 
 export type WordCount = Array<{
