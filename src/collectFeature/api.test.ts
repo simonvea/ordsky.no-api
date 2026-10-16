@@ -45,7 +45,8 @@ describe("DELETE /api/felles/:id/cloud", () => {
       // Arrange
       await submitWords("aaaaa", ["eple", "pære"]);
       await submitWords("aaaaa", ["eple"]);
-      await saveCloud("aaaaa");
+      const saved = await saveCloud("aaaaa");
+      expect((await saved.json()).cloud).toBeDefined();
 
       // Act
       const response = await clearCloud("aaaaa");
