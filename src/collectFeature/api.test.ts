@@ -52,16 +52,19 @@ describe("DELETE /api/felles/:id/cloud", () => {
 
       // Assert
       expect(response.status).toBe(200);
-      const session = await (await fetch(`${baseUrl}/aaaaa`)).json();
-      expect(session.cloud).toBeUndefined();
-      expect(session.wordCount).toBeUndefined();
-      expect(session.words).toEqual(["eple", "pære", "eple"]);
-      expect(session.numberOfEntries).toBe(2);
+      const returned = await response.json();
+      const stored = await (await fetch(`${baseUrl}/aaaaa`)).json();
+      for (const session of [returned, stored]) {
+        expect(session.cloud).toBeUndefined();
+        expect(session.wordCount).toBeUndefined();
+        expect(session.words).toEqual(["eple", "pære", "eple"]);
+        expect(session.numberOfEntries).toBe(2);
+      }
     });
   });
 
   describe("given a session without a cloud", () => {
-    it("when the cloud is cleared, then it answers 200 and the session is unchanged", async () => {
+    it("when the cloud is cleared, then it answers 200 and the words and entry count are kept", async () => {
       // Arrange
       await submitWords("bbbbb", ["sol"]);
 
